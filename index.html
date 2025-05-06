@@ -48,7 +48,6 @@
     <option value="manual">Manual Input</option>
     <option value="auto">Auto Refresh (IoT)</option>
     <option value="iot-graph">Input with Graph</option>
-
   </select>
   <br><br>
 
@@ -162,9 +161,15 @@
         });
     }
 
+    // Optional: Replace this function with actual IoT fetch logic
+    function fetchRealIoT() {
+      console.warn("⚠️ 'fetchRealIoT' fallback to simulated IoT mode.");
+      fetchIoT();  // Fallback to simulated data
+    }
+
     modeSelector.addEventListener("change", () => {
       const mode = modeSelector.value;
-      clearInterval(window.autoInterval); // stop previous interval
+      clearInterval(window.autoInterval); // Stop any previous polling
 
       if (mode === "manual") {
         document.getElementById("manual-form-container").style.display = "block";
@@ -174,18 +179,17 @@
         document.getElementById("manual-form-container").style.display = "none";
         trendContainer.style.display = "block";
 
-        fetchIoT(); // Simulated
+        fetchIoT();
         window.autoInterval = setInterval(fetchIoT, 5000);
 
       } else if (mode === "iot-graph") {
         document.getElementById("manual-form-container").style.display = "none";
         trendContainer.style.display = "block";
 
-        fetchRealIoT(); // Actual sensor data
+        fetchRealIoT();
         window.autoInterval = setInterval(fetchRealIoT, 5000);
       }
     });
-
 
     window.addEventListener("beforeunload", () => clearInterval(window.autoInterval));
     modeSelector.dispatchEvent(new Event("change"));
