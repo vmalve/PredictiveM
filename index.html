@@ -89,22 +89,30 @@
       probabilityChart.update();
     }
 
+    async function safeFetch(url, handler) {
+      try {
+        const res = await fetch(url);
+        if (res.status === 204) {
+          console.log("⚠️ No data yet.");
+          return;
+        }
+        const data = await res.json();
+        handler(data);
+      } catch (err) {
+        console.error("Fetch error:", err);
+      }
+    }
+
     function fetchSimulatedIoT() {
-      fetch('/get_prediction?source=simulated')
-        .then(res => res.json())
-        .then(updateChart);
+      safeFetch('/get_prediction?source=simulated', updateChart);
     }
 
     function fetchRealIoT() {
-      fetch('/get_prediction?source=iot')
-        .then(res => res.json())
-        .then(updateChart);
+      safeFetch('/get_prediction?source=iot', updateChart);
     }
 
     function fetchDesktopIoT() {
-      fetch('/get_prediction?source=desktop')
-        .then(res => res.json())
-        .then(updateChart);
+      safeFetch('/get_prediction?source=desktop', updateChart);
     }
 
     modeSelector.addEventListener("change", () => {
@@ -112,7 +120,7 @@
       clearInterval(window.autoInterval);
 
       document.getElementById("manual-form-container").style.display = mode === "manual" ? "block" : "none";
-      trendContainer.style.display = mode === "manual" ? "none" : "block";
+      trendContainer.style.display = (mode === "auto" || mode.includes("graph")) ? "block" : "none";
 
       if (mode === "auto") {
         fetchSimulatedIoT();
@@ -128,7 +136,6 @@
 
     window.addEventListener("beforeunload", () => clearInterval(window.autoInterval));
 
-    // Handle manual form submit
     document.getElementById("manualForm").addEventListener("submit", function (e) {
       e.preventDefault();
       const formData = new FormData(this);
@@ -146,7 +153,6 @@
       });
     });
 
-    // Trigger mode once on load
     modeSelector.dispatchEvent(new Event("change"));
   </script>
 </body>
