@@ -47,6 +47,8 @@
   <select id="mode">
     <option value="manual">Manual Input</option>
     <option value="auto">Auto Refresh (IoT)</option>
+    <option value="iot-graph">Input with Graph</option>
+
   </select>
   <br><br>
 
@@ -162,17 +164,28 @@
 
     modeSelector.addEventListener("change", () => {
       const mode = modeSelector.value;
+      clearInterval(window.autoInterval); // stop previous interval
+
       if (mode === "manual") {
         document.getElementById("manual-form-container").style.display = "block";
         trendContainer.style.display = "none";
-        clearInterval(window.autoInterval);
-      } else {
+
+      } else if (mode === "auto") {
         document.getElementById("manual-form-container").style.display = "none";
         trendContainer.style.display = "block";
-        fetchIoT(); // Fetch immediately
+
+        fetchIoT(); // Simulated
         window.autoInterval = setInterval(fetchIoT, 5000);
+
+      } else if (mode === "iot-graph") {
+        document.getElementById("manual-form-container").style.display = "none";
+        trendContainer.style.display = "block";
+
+        fetchRealIoT(); // Actual sensor data
+        window.autoInterval = setInterval(fetchRealIoT, 5000);
       }
     });
+
 
     window.addEventListener("beforeunload", () => clearInterval(window.autoInterval));
     modeSelector.dispatchEvent(new Event("change"));
