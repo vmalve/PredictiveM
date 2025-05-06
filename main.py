@@ -22,7 +22,7 @@ app.add_middleware(
 # Global variable to store latest IoT POSTed data
 latest_iot_data = None
 
-# Load your trained ML model
+# Load ML model
 try:
     model = joblib.load("random_forest_model.pkl")
     print("✅ Model loaded successfully.")
@@ -44,12 +44,12 @@ class SensorData(BaseModel):
 async def serve_index():
     return FileResponse(os.path.join(os.path.dirname(__file__), "index.html"))
 
-# Manual prediction + store for graph
+# Manual POST prediction
 @app.post("/predict/")
 async def predict(data: SensorData):
     global latest_iot_data
     try:
-        print(f"📥 Received data: {data.dict()}")
+        print(f"📥 Received manual data: {data.dict()}")
         if model is None:
             raise RuntimeError("Model not loaded.")
 
@@ -61,13 +61,14 @@ async def predict(data: SensorData):
         else:
             probability = 0.5
 
-        latest_iot_data = data.dict()  # Save for /get_prediction
+        # Save for future graphing in "iot-graph" mode
+        latest_iot_data = data.dict()
 
         result = {
             "prediction": str(prediction),
             "probability": round(float(probability), 2)
         }
-        print(f"✅ Prediction: {result}")
+        print(f"✅ Prediction result: {result}")
         return result
 
     except Exception as e:
@@ -79,7 +80,7 @@ async def predict(data: SensorData):
             "error": str(e)
         }
 
-# IoT auto-refresh prediction endpoint
+# Graph/Auto-refresh prediction
 @app.get("/get_prediction")
 async def get_prediction(source: str = Query("simulated")):
     global latest_iot_data
@@ -87,22 +88,20 @@ async def get_prediction(source: str = Query("simulated")):
         if model is None:
             raise RuntimeError("Model not loaded.")
 
-        if source == "iot":
+        if source == "iot":  # Use previously submitted data (desktop or real IoT)
             if latest_iot_data is None:
-                raise RuntimeError("No IoT data received yet.")
+                raise RuntimeError("No IoT/manual data received yet.")
             data = latest_iot_data
-            print(f"📡 Returning latest IoT data: {data}")
-        else:
-            # Generate simulated values
+            print(f"📡 Returning stored IoT/manual data: {data}")
+        else:  # Simulated auto-refresh
             data = {
                 "voltage": round(random.uniform(100, 250), 2),
                 "current": round(random.uniform(0.1, 10), 2),
                 "temperature": round(random.uniform(10, 100), 2),
-                "power": 0.0,  # will calculate next
                 "vibration": round(random.uniform(0.0, 1.0), 2)
             }
             data["power"] = round(data["voltage"] * data["current"], 2)
-            print(f"🔄 Auto-refresh simulated input: {data}")
+            print(f"🔄 Simulated auto data: {data}")
 
         input_array = np.array([[data["voltage"], data["current"], data["temperature"], data["power"], data["vibration"]]])
         prediction = model.predict(input_array)[0]
