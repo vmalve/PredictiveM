@@ -20,7 +20,14 @@ app.add_middleware(
 IOT_DATA_EXPIRY_MINUTES = 2  # Set how long IOT data is valid
 
 # Load ML model
-model = joblib.load("random_forest_model.pkl")
+# Load your trained ML model
+try:
+    model = joblib.load("random_forest_model.pkl")
+    print("✅ Model loaded successfully.")
+except Exception as e:
+    print("❌ Failed to load model:")
+    traceback.print_exc()
+    model = None
 
 # Sensor data structure
 class SensorData(BaseModel):
@@ -34,9 +41,10 @@ class SensorData(BaseModel):
 latest_iot_data = None
 latest_iot_time = None
 
+# Serve index.html from root
 @app.get("/")
-def read_root():
-    return {"status": "IoT ML API Running"}
+async def serve_index():
+    return FileResponse(os.path.join(os.path.dirname(__file__), "index.html"))
 
 # Manual prediction (no effect on IoT state)
 @app.post("/predict/")
