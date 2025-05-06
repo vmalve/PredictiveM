@@ -9,6 +9,16 @@ import numpy as np
 import random
 import traceback
 import os
+import logging
+import sys
+
+# Set up basic logging to stdout (for Render)
+logging.basicConfig(
+    stream=sys.stdout,
+    level=logging.DEBUG,  # Use INFO or DEBUG as needed
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 
 app = FastAPI()
 
@@ -127,6 +137,8 @@ async def get_prediction():
 @app.post("/update_iot_data")
 def update_iot_data(data: SensorData):
     global latest_iot_data, latest_iot_time
+    logging.debug(f"🟢 IoT data received: {latest_iot_data}")
+
     latest_iot_data = data.dict()
 
     
@@ -144,6 +156,9 @@ def get_iot_prediction():
     # Check if the data has expired
     if datetime.now() - latest_iot_time > timedelta(minutes=IOT_DATA_EXPIRY_MINUTES):
         return {"prediction": "No recent data", "probability": 0.0}
+
+
+    logging.debug(f"📊 Predicting using IoT data: {latest_iot_data}")
 
     # Convert the latest data to a DataFrame
     df = pd.DataFrame([latest_iot_data])
