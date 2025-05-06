@@ -176,6 +176,8 @@ def get_iot_prediction():
     pred = model.predict(df)[0]
     proba = model.predict_proba(df)[0][1]
 
+    logging.debug(f"🔍 IoT Prediction: {pred}, Probability: {proba}")
+
     return {"prediction": int(pred), "probability": float(proba)}
 
 
