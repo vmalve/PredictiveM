@@ -2,93 +2,52 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Sensor Prediction Dashboard</title>
+  <title>IoT Predictive Maintenance</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-
-    h1, h2 {
-      color: #2c3e50;
-    }
-
-    label {
-      display: inline-block;
-      width: 120px;
-    }
-
-    input[type="number"] {
-      width: 100px;
-    }
-
-    #result {
-      margin-top: 20px;
-      background: #ecf0f1;
-      padding: 10px;
-      border-radius: 6px;
-      width: fit-content;
-    }
-
-    canvas {
-      margin-top: 20px;
-    }
-
-    #trend-container {
-      display: none;
-    }
-  </style>
 </head>
 <body>
-  <h1>Sensor Prediction Dashboard</h1>
+  <h1>IoT Predictive Maintenance Dashboard</h1>
 
-  <h2>Select Mode</h2>
-  <select id="mode">
+  <label for="mode">Select Mode:</label>
+  <select id="modeSelector">
     <option value="manual">Manual Input</option>
-    <option value="auto">Auto Refresh (IoT)</option>
-    <option value="iot-graph">Input with Graph</option>
+    <option value="auto">Auto Refresh IoT (Simulated)</option>
+    <option value="iot-graph">Input with Graph (Real IoT)</option>
+    <option value="desktop-graph">Input with Graph (Desktop)</option>
   </select>
-  <br><br>
 
   <div id="manual-form-container">
-    <h2>Enter Sensor Data</h2>
-    <form id="manual-form">
-      <label>Voltage:</label><input type="number" id="voltage" step="any" value="110"><br><br>
-      <label>Current:</label><input type="number" id="current" step="any" value="0.5"><br><br>
-      <label>Temperature:</label><input type="number" id="temperature" step="any" value="20"><br><br>
-      <label>Power:</label><input type="number" id="power" step="any" value="55"><br><br>
-      <label>Vibration:</label><input type="number" id="vibration" step="any" value="0.2"><br><br>
-      <input type="submit" value="Submit">
+    <h2>Manual Input</h2>
+    <form id="manualForm">
+      <label>Voltage: <input type="number" step="any" name="voltage" required></label><br>
+      <label>Current: <input type="number" step="any" name="current" required></label><br>
+      <label>Temperature: <input type="number" step="any" name="temperature" required></label><br>
+      <label>Power: <input type="number" step="any" name="power" required></label><br>
+      <label>Vibration: <input type="number" step="any" name="vibration" required></label><br>
+      <button type="submit">Submit</button>
     </form>
   </div>
 
-  <h2>Prediction Result:</h2>
-  <div id="result">
-    <p>Prediction: <span id="prediction">Not Yet Predicted</span></p>
+  <div id="trend-container" style="display:none;">
+    <h2>Live Prediction Trend</h2>
+    <canvas id="trendChart" width="600" height="300"></canvas>
+    <p>Prediction: <span id="prediction">N/A</span></p>
     <p>Probability: <span id="probability">N/A</span></p>
   </div>
 
-  <div id="trend-container">
-    <h2>Probability Trend (IoT Mode)</h2>
-    <canvas id="probabilityChart" width="600" height="300"></canvas>
-  </div>
-
   <script>
-    const manualForm = document.getElementById("manual-form");
-    const modeSelector = document.getElementById("mode");
+    const modeSelector = document.getElementById("modeSelector");
     const trendContainer = document.getElementById("trend-container");
+    const ctx = document.getElementById("trendChart").getContext("2d");
 
-    const ctx = document.getElementById('probabilityChart').getContext('2d');
     const probabilityData = {
       labels: [],
       datasets: [
         {
-          label: 'Prediction Probability',
+          label: 'Model Probability',
           data: [],
           borderColor: 'blue',
           fill: false,
-          tension: 0.1
         },
         {
           label: 'Threshold (0.5)',
@@ -96,8 +55,6 @@
           borderColor: 'red',
           borderDash: [5, 5],
           fill: false,
-          pointRadius: 0,
-          tension: 0
         }
       ]
     };
@@ -106,92 +63,90 @@
       type: 'line',
       data: probabilityData,
       options: {
-        responsive: true,
         scales: {
-          y: {
-            min: 0,
-            max: 1
-          }
+          y: { beginAtZero: true, max: 1 }
         }
       }
     });
 
-    manualForm.addEventListener("submit", function(event) {
-      event.preventDefault();
+    function updateChart(data) {
+      const timestamp = new Date().toLocaleTimeString();
+      const prob = data.probability;
 
-      const voltage = parseFloat(document.getElementById("voltage").value);
-      const current = parseFloat(document.getElementById("current").value);
-      const temperature = parseFloat(document.getElementById("temperature").value);
-      const power = parseFloat(document.getElementById("power").value);
-      const vibration = parseFloat(document.getElementById("vibration").value);
+      document.getElementById("prediction").textContent = data.prediction;
+      document.getElementById("probability").textContent = prob.toFixed(2);
 
-      fetch('/predict/', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ voltage, current, temperature, power, vibration })
-      })
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById("prediction").textContent = data.prediction;
-        document.getElementById("probability").textContent = data.probability.toFixed(2);
-      });
-    });
+      if (probabilityData.labels.length >= 20) {
+        probabilityData.labels.shift();
+        probabilityData.datasets[0].data.shift();
+        probabilityData.datasets[1].data.shift();
+      }
 
-    function fetchIoT() {
-      fetch('/get_prediction')
-        .then(res => res.json())
-        .then(data => {
-          const timestamp = new Date().toLocaleTimeString();
-          const prob = data.probability;
+      probabilityData.labels.push(timestamp);
+      probabilityData.datasets[0].data.push(prob);
+      probabilityData.datasets[1].data.push(0.5);
 
-          document.getElementById("prediction").textContent = data.prediction;
-          document.getElementById("probability").textContent = prob.toFixed(2);
-
-          if (probabilityData.labels.length >= 20) {
-            probabilityData.labels.shift();
-            probabilityData.datasets[0].data.shift();
-            probabilityData.datasets[1].data.shift();
-          }
-
-          probabilityData.labels.push(timestamp);
-          probabilityData.datasets[0].data.push(prob);
-          probabilityData.datasets[1].data.push(0.5);
-
-          probabilityChart.update();
-        });
+      probabilityChart.update();
     }
 
-    // Optional: Replace this function with actual IoT fetch logic
+    function fetchSimulatedIoT() {
+      fetch('/get_prediction?source=simulated')
+        .then(res => res.json())
+        .then(updateChart);
+    }
+
     function fetchRealIoT() {
-      console.warn("⚠️ 'fetchRealIoT' fallback to simulated IoT mode.");
-      fetchIoT();  // Fallback to simulated data
+      fetch('/get_prediction?source=iot')
+        .then(res => res.json())
+        .then(updateChart);
+    }
+
+    function fetchDesktopIoT() {
+      fetch('/get_prediction?source=desktop')
+        .then(res => res.json())
+        .then(updateChart);
     }
 
     modeSelector.addEventListener("change", () => {
       const mode = modeSelector.value;
-      clearInterval(window.autoInterval); // Stop any previous polling
+      clearInterval(window.autoInterval);
 
-      if (mode === "manual") {
-        document.getElementById("manual-form-container").style.display = "block";
-        trendContainer.style.display = "none";
+      document.getElementById("manual-form-container").style.display = mode === "manual" ? "block" : "none";
+      trendContainer.style.display = mode === "manual" ? "none" : "block";
 
-      } else if (mode === "auto") {
-        document.getElementById("manual-form-container").style.display = "none";
-        trendContainer.style.display = "block";
-
-        fetchIoT();
-        window.autoInterval = setInterval(fetchIoT, 5000);
-
+      if (mode === "auto") {
+        fetchSimulatedIoT();
+        window.autoInterval = setInterval(fetchSimulatedIoT, 5000);
       } else if (mode === "iot-graph") {
-        document.getElementById("manual-form-container").style.display = "none";
-        trendContainer.style.display = "block";
-
         fetchRealIoT();
         window.autoInterval = setInterval(fetchRealIoT, 5000);
+      } else if (mode === "desktop-graph") {
+        fetchDesktopIoT();
+        window.autoInterval = setInterval(fetchDesktopIoT, 5000);
       }
     });
 
     window.addEventListener("beforeunload", () => clearInterval(window.autoInterval));
+
+    // Handle manual form submit
+    document.getElementById("manualForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const payload = {};
+      formData.forEach((value, key) => payload[key] = parseFloat(value));
+
+      fetch('/predict_manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(`Prediction: ${data.prediction}\nProbability: ${data.probability}`);
+      });
+    });
+
+    // Trigger mode once on load
     modeSelector.dispatchEvent(new Event("change"));
   </script>
 </body>
