@@ -90,7 +90,7 @@ async def get_prediction(source: str = Query("simulated")):
 
         if source == "iot":  # Use previously submitted data (desktop or real IoT)
             if latest_iot_data is None:
-                raise RuntimeError("No IoT/manual data received yet.")
+                return JSONResponse(status_code=204, content={"message": "No IoT/manual data received yet."})
             data = latest_iot_data
             print(f"📡 Returning stored IoT/manual data: {data}")
         else:  # Simulated auto-refresh
