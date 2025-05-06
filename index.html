@@ -145,7 +145,7 @@
       const power = parseFloat(document.getElementById("power").value);
       const vibration = parseFloat(document.getElementById("vibration").value);
 
-      fetch('/predict/', {
+      fetch('/predict/manual', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ voltage, current, temperature, power, vibration })
@@ -153,14 +153,19 @@
       .then(res => res.json())
       .then(data => {
         document.getElementById("prediction").textContent = data.prediction;
-        document.getElementById("probability").textContent = data.probability.toFixed(2);
+        if (typeof data.probability === 'number') {
+          document.getElementById("probability").textContent = data.probability.toFixed(2);
+      } else {
+      document.getElementById("probability").textContent = "N/A";
+}
+
         showStatus("Manual prediction successful.", "success");
       });
     });
 
     function fetchAuto() {
-      fetch('/get_prediction')
-        .then(res => res.json())
+      fetch('/predict/auto')  // ✅ updated endpoint
+      .then(res => res.json())
         .then(data => {
           updateGraph(data);
           showStatus("Auto prediction received.", "success");
@@ -194,7 +199,15 @@
       const prob = data.probability;
 
       document.getElementById("prediction").textContent = data.prediction;
-      document.getElementById("probability").textContent = prob.toFixed(2);
+
+      if (typeof data.probability === 'number') 
+      {
+        document.getElementById("probability").textContent = data.probability.toFixed(2);
+      } else 
+      {
+        document.getElementById("probability").textContent = "N/A";
+      }
+
 
       if (probabilityData.labels.length >= 20) {
         probabilityData.labels.shift();
@@ -209,10 +222,10 @@
       probabilityChart.update();
     }
 
-    function showStatus(message, type) {
+    function showStatus(message, type) 
+    {
       statusBar.textContent = message;
-      statusBar.className = type === "success" ? "success" : "warning";
-      statusBar.classList.add("status-bar");
+      statusBar.className = "status-bar " + (type === "success" ? "success" : "warning");
       statusBar.style.display = "block";
     }
 
