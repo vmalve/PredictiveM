@@ -3,3 +3,6 @@ uvicorn
 numpy
 scikit-learn
 joblib
+python-multipart
+jinja2
+
