@@ -34,7 +34,6 @@ except Exception as e:
     traceback.print_exc()
     model = None
 
-# Sensor data structure
 class SensorData(BaseModel):
     voltage: float
     current: float
@@ -129,11 +128,12 @@ async def get_prediction():
 def update_iot_data(data: SensorData):
     global latest_iot_data, latest_iot_time
     latest_iot_data = data.dict()
+
+    
     latest_iot_time = datetime.now()
     return {"status": "IOT data received"}
 
-
-# Get prediction from latest IoT data
+# Get prediction from the latest IoT data
 @app.get("/predict/iot")
 def get_iot_prediction():
     global latest_iot_data, latest_iot_time
@@ -141,11 +141,26 @@ def get_iot_prediction():
     if latest_iot_data is None or latest_iot_time is None:
         return {"prediction": "No data", "probability": 0.0}
 
+    # Check if the data has expired
     if datetime.now() - latest_iot_time > timedelta(minutes=IOT_DATA_EXPIRY_MINUTES):
         return {"prediction": "No recent data", "probability": 0.0}
 
+    # Convert the latest data to a DataFrame
     df = pd.DataFrame([latest_iot_data])
+
+    # Rename columns to match model's training data
+    df = df.rename(columns={
+        "voltage": "Voltage",
+        "current": "Current",
+        "temperature": "Temperature",
+        "power": "Power",
+        "vibration": "Vibration"
+    })
+    
+    # Make the prediction and get the probability
     pred = model.predict(df)[0]
     proba = model.predict_proba(df)[0][1]
+
     return {"prediction": int(pred), "probability": float(proba)}
+
 
