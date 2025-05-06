@@ -20,7 +20,7 @@ app.add_middleware(
 IOT_DATA_EXPIRY_MINUTES = 2  # Set how long IOT data is valid
 
 # Load ML model
-model = joblib.load("model/pipeline_model.pkl")
+model = joblib.load("random_forest_model.pkl")
 
 # Sensor data structure
 class SensorData(BaseModel):
