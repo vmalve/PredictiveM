@@ -172,29 +172,67 @@
         });
     }
 
-    function fetchRealIoT() {
-      fetch('/predict/iot')
-        .then(res => {
-          if (res.status === 204) {
-            showStatus("No IoT data available yet.", "warning");
-            document.getElementById("prediction").textContent = "Waiting for IoT data...";
-            document.getElementById("probability").textContent = "N/A";
-            return null;
-          }
-          return res.json();
-        })
-        .then(data => {
-          if (!data) return;
-          updateGraph(data);
-          showStatus("IoT data received successfully.", "success");
-        })
-        .catch(error => {
-          console.error("IoT fetch error:", error);
-          showStatus("Error fetching IoT data.", "warning");
-        });
-    }
+  function fetchRealIoT() 
+  {
+  console.log("fetchRealIoT called");  
+  fetch('/predict/iotLive')
+    .then(res => {
+      console.log("Response received from /predict/iotLive");
+     showStatus("Fetching from /predict/iotLive...", "warning");
 
-    function updateGraph(data) {
+      if (res.status === 204) {
+        showStatus("No IoT data available yet.", "warning");
+        document.getElementById("prediction").textContent = "Waiting for IoT data...";
+        document.getElementById("probability").textContent = "N/A";
+        return null;
+      }
+      return res.json();
+    })
+    .then(data => {
+      if (!data) return;
+      updateGraph(data);
+      showStatus("IoT data received successfully.", "success");
+    })
+    .catch(error => {
+      console.error("IoT fetch error:", error);
+      showStatus("Error fetching IoT data.", "warning");
+    });
+}
+
+function updateGraph(data) {
+  const timestamp = new Date().toLocaleTimeString();
+  const prob = data.probability;
+
+  // Debugging the data before updating
+  console.log("Updating graph with data:", data);
+
+  document.getElementById("prediction").textContent = data.prediction;
+
+  if (typeof data.probability === 'number') {
+    document.getElementById("probability").textContent = data.probability.toFixed(2);
+  } else {
+    document.getElementById("probability").textContent = "N/A";
+  }
+
+  if (probabilityData.labels.length >= 20) {
+    probabilityData.labels.shift();
+    probabilityData.datasets[0].data.shift();
+    probabilityData.datasets[1].data.shift();
+  }
+
+  probabilityData.labels.push(timestamp);
+  probabilityData.datasets[0].data.push(prob);
+  probabilityData.datasets[1].data.push(0.5);
+
+  // Debugging chart update
+  console.log("Updated chart data:", probabilityData);
+
+  probabilityChart.update();
+}
+
+
+
+    function updateGraph1(data) {
       const timestamp = new Date().toLocaleTimeString();
       const prob = data.probability;
 

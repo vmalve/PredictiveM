@@ -1,16 +1,25 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
 import pandas as pd
 from datetime import datetime, timedelta
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 import numpy as np
 import random
 import traceback
 import os
 import logging
 import sys
+from typing import Optional
+
+# Global buffer to store partial data
+latest_prediction_result = None
+latest_iot_data = {}
+latest_iot_time = None
+required_fields = {"voltage", "current", "temperature", "power", "vibration", "humidity"}
+
+
 
 # Set up basic logging to stdout (for Render)
 logging.basicConfig(
@@ -33,12 +42,27 @@ app.add_middleware(
 
 # Constants
 IOT_DATA_EXPIRY_MINUTES = 2  # Set how long IOT data is valid
+#MODEL_PATH = os.path.join(os.path.dirname(__file__), 'random_forest_model.pkl')
+MODEL_PATH = os.path.join(os.getcwd(), 'random_forest_model.pkl')
+
+
 
 # Load ML model
 # Load your trained ML model
 try:
-    model = joblib.load("random_forest_model.pkl")
+    if not os.path.exists(MODEL_PATH):
+        logging.error(f"Model file not found at path: {MODEL_PATH}")
+        raise FileNotFoundError(f"Model file not found at path: {MODEL_PATH}")
+
+    loaded_obj = joblib.load(MODEL_PATH)
+    if isinstance(loaded_obj, tuple):
+        model, expected_fields = loaded_obj
+    else:
+        model = loaded_obj
+        # Define fallback feature order (should match training exactly)
+        expected_fields = ['Voltage', 'Current', 'Temperature', 'Power', 'Vibration', 'Humidity']
     print("✅ Model loaded successfully.")
+
 except Exception as e:
     print("❌ Failed to load model:")
     traceback.print_exc()
@@ -50,10 +74,9 @@ class SensorData(BaseModel):
     temperature: float
     power: float
     vibration: float
+    humidity: Optional[float] = 35  # ✅ Default value
+    
 
-# Store latest IoT data and timestamp
-latest_iot_data = None
-latest_iot_time = None
 
 # Serve index.html from root
 @app.get("/")
@@ -68,13 +91,28 @@ async def predict(data: SensorData):
         if model is None:
             raise RuntimeError("Model not loaded.")
 
-        input_array = np.array([[data.voltage, data.current, data.temperature, data.power, data.vibration]])
-        prediction = model.predict(input_array)[0]
+   
+        input_data = pd.DataFrame([{
+            "Voltage": data.voltage,
+            "Current": data.current,
+            "Temperature": data.temperature,
+            "Power": data.power,
+            "Vibration": data.vibration,
+            "Humidity": data.humidity
+        }])
+
+        #input_df = pd.DataFrame([[input_data[field] for field in expected_fields]], columns=expected_fields)
+        input_df = input_data[expected_fields]
+        logging.info(f"Received input: {input_data}")
 
         if hasattr(model, "predict_proba"):
-            probability = model.predict_proba(input_array).max()
+            probability = model.predict_proba(input_df)[0][1]
+            prediction = int(probability > 0.5)
         else:
+            prediction = model.predict(input_df)[0]
             probability = 0.5
+
+
 
         result = {
             "prediction": str(prediction),
@@ -92,7 +130,6 @@ async def predict(data: SensorData):
             "error": str(e)
         }
 
-
 # Auto-refresh (IoT) prediction endpoint
 @app.get("/predict/auto")
 async def get_prediction():
@@ -106,16 +143,31 @@ async def get_prediction():
         temperature = round(random.uniform(10, 100), 2)
         power = round(voltage * current, 2)
         vibration = round(random.uniform(0.0, 1.0), 2)
+        humidity = round(random.uniform(35.0, 40.0), 2)
 
         print(f"🔄 Auto-refresh simulated input: voltage={voltage}, current={current}, temperature={temperature}, power={power}, vibration={vibration}")
 
-        input_array = np.array([[voltage, current, temperature, power, vibration]])
-        prediction = model.predict(input_array)[0]
+        # Create DataFrame with correct column names
+        input_data = pd.DataFrame([{
+            "Voltage": voltage,
+            "Current": current,
+            "Temperature": temperature,
+            "Power": power,
+            "Vibration": vibration,
+            "Humidity": humidity
+        }])
+       
+        input_df = input_data[expected_fields]
+
+        logging.info(f"Received input: {input_data}")
 
         if hasattr(model, "predict_proba"):
-            probability = model.predict_proba(input_array).max()
+            probability = model.predict_proba(input_df)[0][1]
+            prediction = int(probability > 0.5)
         else:
+            prediction = model.predict(input_df)[0]
             probability = 0.5
+
 
         result = {
             "prediction": str(prediction),
@@ -133,51 +185,96 @@ async def get_prediction():
             "error": str(e)
         }
 
-# Update IoT data (e.g., from backend device or simulator)
-@app.post("/update_iot_data")
-def update_iot_data(data: SensorData):
-    global latest_iot_data, latest_iot_time
-    logging.debug(f"🟢 IoT data received: {latest_iot_data}")
 
-    latest_iot_data = data.dict()
+@app.get("/predict/iotLive")
+async def predict_iotLive():
+    try:
+        logging.info("🔄 Received request to /predict/iotLive")
 
-    
-    latest_iot_time = datetime.now()
-    return {"status": "IOT data received"}
+        # Ensure latest_prediction_result is available
+        if latest_prediction_result is None:
+            logging.warning("⚠️ No prediction result available. Returning 204.")
+            return Response(status_code=204)
 
-# Get prediction from the latest IoT data
-@app.get("/predict/iot")
-def get_iot_prediction():
-    global latest_iot_data, latest_iot_time
+        logging.info(f"✅ Returning prediction result: {latest_prediction_result}")
+        return latest_prediction_result  # ✅ return flat structure
 
-    if latest_iot_data is None or latest_iot_time is None:
-        return {"prediction": "No data", "probability": 0.0}
+    except Exception as e:
+        logging.error("❌ Error in /predict/iotLive:", exc_info=True)
+        return {
+            "prediction": "Error",
+            "probability": 0.0,
+            "error": str(e)
+        }
 
-    # Check if the data has expired
-    if datetime.now() - latest_iot_time > timedelta(minutes=IOT_DATA_EXPIRY_MINUTES):
-        return {"prediction": "No recent data", "probability": 0.0}
+@app.post("/predict_iot")
+def predict_iot(data: SensorData):
+    global latest_iot_data, latest_iot_time, latest_prediction_result
+
+    try:
+        # Step 1: Merge incoming partial data
+        #incoming_data = data.dict(exclude_unset=True)
+        incoming_data = data.dict()
+
+        logging.debug(f"📥 Incoming partial data: {incoming_data}")
+
+        latest_iot_data.update(incoming_data)
+        latest_iot_time = datetime.now()
+        logging.debug(f"🗃️ Updated latest_iot_data: {latest_iot_data}")
+        logging.debug(f"🕒 Updated latest_iot_time: {latest_iot_time}")
+
+        # Step 2: Check for missing fields
+        missing = required_fields - latest_iot_data.keys()
+        if missing:
+            logging.debug(f"⏳ Missing fields: {missing}")
+            return {"status": "Waiting for more data", "missing_fields": list(missing)}
+
+        logging.debug(f"✅ All required fields received. Proceeding to prediction.")
+
+        # Step 3: Convert to DataFrame
+        df = pd.DataFrame([latest_iot_data])
+        logging.debug(f"📊 Raw DataFrame: {df}")
+
+        # Step 4: Rename columns
+        input_data = df.rename(columns={
+            "voltage": "Voltage",
+            "current": "Current",
+            "temperature": "Temperature",
+            "power": "Power",
+            "vibration": "Vibration",
+            "humidity": "Humidity"
+        })
+        logging.debug(f"🔄 Renamed input data: {input_data}")
+
+        # Step 5: Reorder columns
+        input_df = input_data[expected_fields]
+
+        logging.debug(f"📥 Final input for model: {input_df}")
+
+        # Step 6: Predict
+        prediction = model.predict(input_df)[0]
+        probability = model.predict_proba(input_df)[0][1]
+        prediction = 1 if probability > 0.5 else 0
+
+        latest_prediction_result = {
+        "prediction": int(prediction),
+        "probability": float(probability),
+        "timestamp": datetime.now().isoformat()
+        }
 
 
-    logging.debug(f"📊 Predicting using IoT data: {latest_iot_data}")
+        logging.debug(f"🤖 Prediction: {prediction}, Probability: {probability}")
 
-    # Convert the latest data to a DataFrame
-    df = pd.DataFrame([latest_iot_data])
+        # Optional: Clear buffer
+        latest_iot_data.clear()
+        logging.debug("🧹 Cleared latest_iot_data after prediction.")
 
-    # Rename columns to match model's training data
-    df = df.rename(columns={
-        "voltage": "Voltage",
-        "current": "Current",
-        "temperature": "Temperature",
-        "power": "Power",
-        "vibration": "Vibration"
-    })
-    
-    # Make the prediction and get the probability
-    pred = model.predict(df)[0]
-    proba = model.predict_proba(df)[0][1]
+        return {"prediction": int(prediction), "probability": float(probability)}
 
-    logging.debug(f"🔍 IoT Prediction: {pred}, Probability: {proba}")
-
-    return {"prediction": int(pred), "probability": float(proba)}
-
-
+    except Exception as e:
+        logging.error("❌ Error during IoT prediction:", exc_info=True)
+        return {
+            "prediction": "Error",
+            "probability": 0.0,
+            "error": str(e)
+        }
