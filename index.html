@@ -2,42 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Sensor Prediction Dashboard</title>
+  <title>Predictive Maintenance Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body
-    {
-    margin: 0;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-                 Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background-color: #f0f4f8;
-    color: #1a1a1a;
-  }
-
-     {
-      margin: 0;
-      font-family: 'Inter', sans-serif;
-      background-color: #f0f4f8;
-      color: #1a1a1a;
+    :root {
+      --primary: #007f5f;
+      --accent: #00b07c;
+      --danger: #d50000;
+      --warning: #ffd600;
+      --bg: #f0f4f8;
+      --card-bg: #fff;
+      --text-main: #1a1a1a;
+      --text-muted: #64748b;
+      --kpi-bg: #e0f7fa;
+      --success: #d4edda;
+      --error: #f8d7da;
     }
-    
-
-    /* Navbar */
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+    }
     .navbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 20px 40px;
-      background-color: #ffffff;
+      padding: 18px 32px;
+      background-color: var(--card-bg);
       box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
-
     .navbar .logo {
       font-weight: 700;
       font-size: 24px;
-      color: #007f5f;
+      color: var(--primary);
+      letter-spacing: 1px;
     }
-
     .navbar ul {
       list-style: none;
       display: flex;
@@ -45,82 +49,141 @@
       margin: 0;
       padding: 0;
     }
-
     .navbar ul li a {
       text-decoration: none;
-      color: #333;
+      color: var(--text-muted);
       font-weight: 500;
       transition: color 0.3s;
+      padding: 2px 8px;
+      border-radius: 4px;
     }
-
+    .navbar ul li a:focus,
     .navbar ul li a:hover {
-      color: #00b07c;
+      color: var(--primary);
+      background: #e5f7f0;
+      outline: none;
     }
-
     .navbar .cta {
-      background-color: #00b07c;
+      background-color: var(--accent);
       padding: 10px 18px;
       border-radius: 8px;
       color: white;
       font-weight: 600;
       text-decoration: none;
       transition: background-color 0.3s;
+      margin-left: 8px;
     }
-
-    .navbar .cta:hover {
+    .navbar .cta:hover,
+    .navbar .cta:focus {
       background-color: #009268;
+      outline: none;
     }
-
-    /* Main Content */
     .main {
-      max-width: 1000px;
-      margin: 40px auto;
-      padding: 0 20px;
+      max-width: 1200px;
+      margin: 36px auto 0 auto;
+      padding: 0 16px;
+    }
+    .main h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+      color: var(--primary);
       text-align: center;
     }
-
-    .main h1 {
-      font-size: 42px;
-      font-weight: 700;
-      margin-bottom: 30px;
-      color: #007f5f;
-    }
-
     .main img {
       width: 100%;
       max-width: 800px;
       border-radius: 12px;
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+      margin-bottom: 32px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .dashboard-grid {
+      display: grid;
+      gap: 32px;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
       margin-bottom: 40px;
     }
-
+    .kpi-card {
+      background: var(--card-bg);
+      border-radius: 14px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 120px;
+      position: relative;
+    }
+    .kpi-title {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    .kpi-value {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 6px;
+    }
+    .kpi-status {
+      font-size: 1rem;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: var(--kpi-bg);
+      color: var(--primary);
+    }
     .container {
-      background: white;
-      padding: 30px;
+      background: var(--card-bg);
+      padding: 28px 24px;
       border-radius: 16px;
       box-shadow: 0 6px 24px rgba(0,0,0,0.06);
-      margin-bottom: 40px;
+      margin-bottom: 36px;
     }
-
     .container h2 {
-      margin-top: 10px;
+      margin-top: 0;
       color: #005f73;
+      font-size: 1.3rem;
+      margin-bottom: 18px;
     }
-
+    .filter-bar {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .filter-bar label {
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .filter-bar select {
+      padding: 7px 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      margin-right: 12px;
+      background: #f7fafc;
+    }
     label {
       display: inline-block;
       width: 120px;
-      font-weight: bold;
+      font-weight: 500;
+      color: var(--text-main);
     }
-
     input[type="number"], select {
       padding: 8px;
       margin: 6px 0;
       border-radius: 6px;
       border: 1px solid #ccc;
       width: 180px;
+      font-size: 1rem;
+      background: #f7fafc;
     }
-
     input[type="submit"] {
       margin-top: 15px;
       padding: 12px 24px;
@@ -132,190 +195,250 @@
       cursor: pointer;
       transition: background-color 0.3s;
     }
-
-    input[type="submit"]:hover {
+    input[type="submit"]:hover,
+    input[type="submit"]:focus {
       background-color: #2980b9;
+      outline: none;
     }
-
-    select {
-      width: 220px;
+    .form-row {
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
-
     #result {
-      margin-top: 20px;
-      background: #e0f7fa;
-      padding: 18px;
+      margin-top: 16px;
+      background: var(--kpi-bg);
+      padding: 16px;
       border-radius: 10px;
-      font-size: 18px;
-    }
-
-    #trend-container {
+      font-size: 1.1rem;
+      text-align: left;
       display: none;
-      margin-top: 40px;
     }
-
     #status-bar {
-      margin-top: 15px;
-      padding: 12px;
+      margin-top: 12px;
+      padding: 10px;
       border-radius: 6px;
       display: none;
-      font-weight: bold;
+      font-weight: 500;
+      font-size: 1rem;
     }
-
     #status-bar.warning {
-      background-color: #f8d7da;
+      background-color: var(--error);
       color: #721c24;
     }
-
     #status-bar.success {
-      background-color: #d4edda;
+      background-color: var(--success);
       color: #155724;
     }
-
-    .form-row {
-      margin-bottom: 16px;
+    #trend-container {
+      display: none;
+      margin-top: 32px;
     }
-
-    /* Emojis & Color Effects */
-    h1::before {
-      content: "📡 ";
+    #trend-container h2 {
+      text-align: left;
+      margin-bottom: 10px;
     }
-
-    h2::before {
-      content: "📊 ";
-      margin-right: 6px;
+    #probabilityChart {
+      background: #f7fafc;
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
-
-    #result p span {
-      font-weight: bold;
-      color: #2c3e50;
+    .alert {
+      background: var(--warning);
+      color: #333;
+      padding: 10px 16px;
+      border-radius: 8px;
+      margin: 16px 0;
+      font-weight: 600;
+      display: none;
     }
-
-    .highlight {
-      background: #fef3c7;
-      padding: 4px 10px;
-      border-radius: 6px;
-      color: #b45309;
+    @media (max-width: 700px) {
+      .main h1 { font-size: 1.5rem; }
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .container { padding: 14px 8px; }
+      .navbar { flex-direction: column; gap: 10px; padding: 12px 8px; }
     }
-
   </style>
 </head>
 <body>
 
   <!-- Navigation -->
-  <nav class="navbar">
-    <div class="logo">⚙️ Predictix Systems</div>
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <div class="logo" tabindex="0">⚙️ Predictix Systems</div>
     <ul>
-      <li><a href="#">Dashboard</a></li>
-      <li><a href="#">Trends</a></li>
-      <li><a href="#">Settings</a></li>
+      <li><a href="#" tabindex="0">Dashboard</a></li>
+      <li><a href="#" tabindex="0">Trends</a></li>
+      <li><a href="#" tabindex="0">Settings</a></li>
     </ul>
     <div>
-      <a href="#" style="margin-right: 16px;">Log in</a>
-      <a href="#" class="cta">🚀 Try for free</a>
+      <a href="#" style="margin-right: 16px;" tabindex="0">Log in</a>
+      <a href="#" class="cta" tabindex="0">🚀 Try for free</a>
     </div>
   </nav>
 
   <!-- Main Section -->
   <div class="main">
-    <h1>Sensor Prediction Dashboard</h1>
-   <img src="static/sensor.jpeg" alt="Sensor Graph">
-    <div class="container">
-      <h2>🧭 Select Mode</h2>
-      <select id="mode">
+    <h1>Predictive Maintenance Dashboard</h1>
+    <img src="static/sensor.jpeg" alt="Sensor Graph"
+         onerror="this.onerror=null;this.src='https://via.placeholder.com/800x400?text=Sensor+Image+Not+Found';">
+
+    <!-- KPI Cards -->
+    <div class="dashboard-grid" aria-label="Key Metrics">
+      <div class="kpi-card" tabindex="0" aria-label="System Health">
+        <div class="kpi-title">System Health</div>
+        <div class="kpi-value" id="kpi-health">98.7%</div>
+        <div class="kpi-status" id="kpi-health-status">Operational</div>
+      </div>
+      <div class="kpi-card" tabindex="0" aria-label="Last Prediction">
+        <div class="kpi-title">Last Prediction</div>
+        <div class="kpi-value" id="kpi-prediction">N/A</div>
+        <div class="kpi-status" id="kpi-pred-status">No Data</div>
+      </div>
+      <div class="kpi-card" tabindex="0" aria-label="Latest Probability">
+        <div class="kpi-title">Latest Probability</div>
+        <div class="kpi-value" id="kpi-prob">N/A</div>
+        <div class="kpi-status" id="kpi-prob-status">No Data</div>
+      </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar" aria-label="Data Filters">
+      <label for="mode">Mode:</label>
+      <select id="mode" aria-label="Select Mode">
         <option value="manual">Manual Input</option>
         <option value="auto">Auto Refresh</option>
         <option value="iot-graph">IoT Graph</option>
       </select>
+      <label for="date-range">Date Range:</label>
+      <select id="date-range" aria-label="Select Date Range">
+        <option value="today">Today</option>
+        <option value="week">This Week</option>
+        <option value="month">This Month</option>
+      </select>
+    </div>
 
+    <div class="container" aria-label="Prediction Section">
       <div id="manual-form-container">
-        <h2>🔢 Enter Sensor Data</h2>
-        <form id="manual-form">
-          <div class="form-row"><label>Voltage:</label><input type="number" id="voltage" step="any" value="230"></div>
-          <div class="form-row"><label>Current:</label><input type="number" id="current" step="any" value="0.35"></div>
-          <div class="form-row"><label>Temperature:</label><input type="number" id="temperature" step="any" value="35"></div>
-          <div class="form-row"><label>Power:</label><input type="number" id="power" step="any" value="79"></div>
-          <div class="form-row"><label>Vibration:</label><input type="number" id="vibration" step="any" value="0.2"></div>
+        <h2>Enter Sensor Data</h2>
+        <form id="manual-form" autocomplete="off">
+          <div class="form-row"><label for="voltage">Voltage:</label><input type="number" id="voltage" step="any" value="230" required aria-required="true"></div>
+          <div class="form-row"><label for="current">Current:</label><input type="number" id="current" step="any" value="0.35" required aria-required="true"></div>
+          <div class="form-row"><label for="temperature">Temperature:</label><input type="number" id="temperature" step="any" value="35" required aria-required="true"></div>
+          <div class="form-row"><label for="power">Power:</label><input type="number" id="power" step="any" value="79" required aria-required="true"></div>
+          <div class="form-row"><label for="vibration">Vibration:</label><input type="number" id="vibration" step="any" value="0.2" required aria-required="true"></div>
           <input type="submit" value="Submit 🔍">
         </form>
       </div>
 
-      <h2>✅ Prediction Result</h2>
-      <div id="result">
-        <p>Prediction: <span id="prediction">Not Yet Predicted</span></p>
-        <p>Probability: <span id="probability">N/A</span></p>
-      </div>
-
-      <div id="status-bar"></div>
-
+      <h2>.</h2>
+      <div id="result" aria-live="polite"></div>
+      <div id="status-bar" role="status"></div>
+      <div class="alert" id="alert-no-data">No IoT data received in the last 2 minutes.</div>
       <div id="trend-container">
-        <h2>📈 Probability Trend (IoT Mode)</h2>
-        <canvas id="probabilityChart" width="700" height="300"></canvas>
+        <h2>Probability Trend (IoT Mode)</h2>
+        <canvas id="probabilityChart" width="700" height="300" aria-label="Probability Trend Chart"></canvas>
       </div>
     </div>
   </div>
+
   <script>
-    const manualForm = document.getElementById("manual-form");
-    const modeSelector = document.getElementById("mode");
-    const trendContainer = document.getElementById("trend-container");
-    const statusBar = document.getElementById("status-bar");
-
+    // --- Chart Setup ---
     const ctx = document.getElementById('probabilityChart').getContext('2d');
-    
-
-  const probabilityData = {
-  labels: [],
-  datasets: [
-    {
-      label: 'Prediction Probability',
-      data: [],
-      borderColor: 'blue',
-      fill: false,
-      tension: 0.1
-    },
-    {
-      label: 'Threshold (0.5)',
-      data: [],
-      borderColor: 'red',
-      borderDash: [5, 5],
-      fill: false,
-      pointRadius: 0,
-      tension: 0
-    },
-    {
-      label: 'Threshold (0.8)',
-      data: [],
-      borderColor: 'green',
-      borderDash: [5, 5],
-      fill: false,
-      pointRadius: 0,
-      tension: 0
-    }
-  ]
-};
+    const probabilityData = {
+      labels: [],
+      datasets: [
+        {
+          label: 'Prediction Probability',
+          data: [],
+          borderColor: '#007f5f',
+          backgroundColor: 'rgba(0,127,95,0.08)',
+          fill: true,
+          tension: 0.1,
+          pointRadius: 3
+        },
+        {
+          label: 'Threshold (0.5)',
+          data: [],
+          borderColor: '#ffd600',
+          borderDash: [5, 5],
+          fill: false,
+          pointRadius: 0,
+          tension: 0
+        },
+        {
+          label: 'Threshold (0.8)',
+          data: [],
+          borderColor: '#d50000',
+          borderDash: [5, 5],
+          fill: false,
+          pointRadius: 0,
+          tension: 0
+        }
+      ]
+    };
     const probabilityChart = new Chart(ctx, {
       type: 'line',
       data: probabilityData,
       options: {
         responsive: true,
+        plugins: {
+          legend: { display: true, labels: { usePointStyle: true } },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                if (context.datasetIndex === 0) {
+                  return `Probability: ${(context.parsed.y*100).toFixed(1)}%`;
+                } else {
+                  return context.dataset.label;
+                }
+              }
+            }
+          }
+        },
         scales: {
           y: {
             min: 0,
-            max: 1
+            max: 1,
+            title: { display: true, text: 'Probability' }
+          },
+          x: {
+            title: { display: true, text: 'Timestamp' }
           }
+        },
+        interaction: {
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false
         }
       }
     });
 
+    // --- Form and Mode Handlers ---
+    const manualForm = document.getElementById("manual-form");
+    const modeSelector = document.getElementById("mode");
+    const trendContainer = document.getElementById("trend-container");
+    const statusBar = document.getElementById("status-bar");
+    const kpiPrediction = document.getElementById("kpi-prediction");
+    const kpiProb = document.getElementById("kpi-prob");
+    const kpiPredStatus = document.getElementById("kpi-pred-status");
+    const kpiProbStatus = document.getElementById("kpi-prob-status");
+    const resultDiv = document.getElementById("result");
+    const alertNoData = document.getElementById("alert-no-data");
+
     manualForm.addEventListener("submit", function(event) {
       event.preventDefault();
-      
-
       const voltage = parseFloat(document.getElementById("voltage").value);
       const current = parseFloat(document.getElementById("current").value);
       const temperature = parseFloat(document.getElementById("temperature").value);
       const power = parseFloat(document.getElementById("power").value);
       const vibration = parseFloat(document.getElementById("vibration").value);
+
+      if (voltage < 0 || current < 0 || temperature < 0 || power < 0 || vibration < 0) {
+        showStatus("All values must be positive.", "warning");
+        return;
+      }
 
       fetch('/predict/manual', {
         method: 'POST',
@@ -324,154 +447,140 @@
       })
       .then(res => res.json())
       .then(data => {
-        document.getElementById("prediction").textContent = data.prediction;
+        resultDiv.innerHTML =
+          `<p>Prediction: <span id="prediction">${data.prediction}</span></p>
+           <p>Probability: <span id="probability">${typeof data.probability === 'number' ? data.probability.toFixed(2) : 'N/A'}</span></p>`;
+        resultDiv.style.display = "block";
+        kpiPrediction.textContent = data.prediction;
+        kpiPredStatus.textContent = "Manual";
         if (typeof data.probability === 'number') {
-          document.getElementById("probability").textContent = data.probability.toFixed(2);
-      } else {
-      document.getElementById("probability").textContent = "N/A";
-}
-
+          kpiProb.textContent = (data.probability*100).toFixed(1) + "%";
+          kpiProbStatus.textContent = data.probability > 0.8 ? "High Risk" : "Normal";
+          kpiProbStatus.style.background = data.probability > 0.8 ? "#ffe5e5" : "#e0f7fa";
+          kpiProbStatus.style.color = data.probability > 0.8 ? "#d50000" : "#007f5f";
+        } else {
+          kpiProb.textContent = "N/A";
+        }
         showStatus("Manual prediction successful.", "success");
       });
     });
 
     function fetchAuto() {
-      fetch('/predict/auto')  // ✅ updated endpoint
+      fetch('/predict/auto')
       .then(res => res.json())
+      .then(data => {
+        updateGraph(data);
+        showStatus("Auto prediction received.", "success");
+      });
+    }
+
+    let lastIoTUpdate = Date.now();
+
+    function fetchRealIoT() {
+      fetch('/predict/iotLive')
+        .then(res => {
+          if (res.status === 204) {
+            showNoIoTData();
+            return null;
+          }
+          return res.json();
+        })
         .then(data => {
+          if (!data) return;
           updateGraph(data);
-          showStatus("Auto prediction received.", "success");
+          showStatus("IoT data received successfully.", "success");
+          lastIoTUpdate = Date.now();
+          hideNoIoTData();
+        })
+        .catch(error => {
+          showStatus("Error fetching IoT data.", "warning");
         });
     }
 
-  function fetchRealIoT() 
-  {
-  console.log("fetchRealIoT called");  
-  fetch('/predict/iotLive')
-    .then(res => {
-      console.log("Response received from /predict/iotLive");
-     showStatus("Fetching from /predict/iotLive...", "warning");
-
-      if (res.status === 204) {
-        showStatus("No IoT data available yet.", "warning");
-        document.getElementById("prediction").textContent = "Waiting for IoT data...";
-        document.getElementById("probability").textContent = "N/A";
-        return null;
-      }
-      return res.json();
-    })
-    .then(data => {
-      if (!data) return;
-      updateGraph(data);
-      showStatus("IoT data received successfully.", "success");
-    })
-    .catch(error => {
-      console.error("IoT fetch error:", error);
-      showStatus("Error fetching IoT data.", "warning");
-    });
-}
-
-function updateGraph(data) {
-  const timestamp = new Date().toLocaleTimeString();
-  const prob = data.probability;
-
-  // Debugging the data before updating
-  console.log("Updating graph with data:", data);
-
-  document.getElementById("prediction").textContent = data.prediction;
-
-  if (typeof data.probability === 'number') {
-    document.getElementById("probability").textContent = data.probability.toFixed(2);
-  } else {
-    document.getElementById("probability").textContent = "N/A";
-  }
-
-  if (probabilityData.labels.length >= 20) {
-    probabilityData.labels.shift();
-    probabilityData.datasets[0].data.shift();
-    probabilityData.datasets[1].data.shift();
-  }
-
-  probabilityData.labels.push(timestamp);
-  probabilityData.datasets[0].data.push(prob);
-
-  if (probabilityChart?.data?.datasets[1]) {
-  probabilityChart.data.datasets[1].data.push(0.5); // Threshold 0.5
-}
-
-if (probabilityChart?.data?.datasets[2]) {
-  probabilityChart.data.datasets[2].data.push(0.8); // Threshold 0.8
-}
-  // Debugging chart update
-  console.log("Updated chart data:", probabilityData);
-
-  probabilityChart.update();
-}
-
-
-
-    function updateGraph1(data) {
+    function updateGraph(data) {
       const timestamp = new Date().toLocaleTimeString();
       const prob = data.probability;
-
-      document.getElementById("prediction").textContent = data.prediction;
-
-      if (typeof data.probability === 'number') 
-      {
-        document.getElementById("probability").textContent = data.probability.toFixed(2);
-      } else 
-      {
-        document.getElementById("probability").textContent = "N/A";
-      }
-
+      resultDiv.innerHTML =
+        `<p>Prediction: <span id="prediction">${data.prediction}</span></p>
+         <p>Probability: <span id="probability">${typeof prob === 'number' ? prob.toFixed(2) : "N/A"}</span></p>`;
+      resultDiv.style.display = "block";
+      kpiPrediction.textContent = data.prediction;
+      kpiPredStatus.textContent = "Auto/IoT";
+      kpiProb.textContent = (prob*100).toFixed(1) + "%";
+      kpiProbStatus.textContent = prob > 0.8 ? "High Risk" : "Normal";
+      kpiProbStatus.style.background = prob > 0.8 ? "#ffe5e5" : "#e0f7fa";
+      kpiProbStatus.style.color = prob > 0.8 ? "#d50000" : "#007f5f";
 
       if (probabilityData.labels.length >= 20) {
         probabilityData.labels.shift();
         probabilityData.datasets[0].data.shift();
         probabilityData.datasets[1].data.shift();
+        probabilityData.datasets[2].data.shift();
       }
-
       probabilityData.labels.push(timestamp);
       probabilityData.datasets[0].data.push(prob);
       probabilityData.datasets[1].data.push(0.5);
-
+      probabilityData.datasets[2].data.push(0.8);
       probabilityChart.update();
     }
 
-    function showStatus(message, type) 
-    {
+    function showStatus(message, type) {
       statusBar.textContent = message;
       statusBar.className = "status-bar " + (type === "success" ? "success" : "warning");
       statusBar.style.display = "block";
     }
 
+    function showNoIoTData() {
+      alertNoData.style.display = "block";
+      resultDiv.style.display = "none";
+      kpiPrediction.textContent = "N/A";
+      kpiPredStatus.textContent = "No Data";
+      kpiProb.textContent = "N/A";
+      kpiProbStatus.textContent = "No Data";
+      probabilityData.labels = [];
+      probabilityData.datasets.forEach(ds => ds.data = []);
+      probabilityChart.update();
+    }
+
+    function hideNoIoTData() {
+      alertNoData.style.display = "none";
+    }
+
+    // --- Mode switching and filters ---
     modeSelector.addEventListener("change", () => {
       const mode = modeSelector.value;
-      clearInterval(window.autoInterval); // stop previous interval
-
+      clearInterval(window.autoInterval);
       if (mode === "manual") {
         document.getElementById("manual-form-container").style.display = "block";
         trendContainer.style.display = "none";
         statusBar.style.display = "none";
-
       } else if (mode === "auto") {
         document.getElementById("manual-form-container").style.display = "none";
         trendContainer.style.display = "block";
-
-        fetchAuto(); 
+        fetchAuto();
         window.autoInterval = setInterval(fetchAuto, 5000);
-
       } else if (mode === "iot-graph") {
         document.getElementById("manual-form-container").style.display = "none";
         trendContainer.style.display = "block";
-
-        fetchRealIoT(); 
+        fetchRealIoT();
         window.autoInterval = setInterval(fetchRealIoT, 5000);
       }
     });
-
     window.addEventListener("beforeunload", () => clearInterval(window.autoInterval));
     modeSelector.dispatchEvent(new Event("change"));
+
+    // --- Data gap detection for IoT mode ---
+    setInterval(() => {
+      if (modeSelector.value === "iot-graph" && Date.now() - lastIoTUpdate > 2 * 60 * 1000) {
+        showNoIoTData();
+      }
+    }, 10000);
+
+    // --- Date Range Filter (progressive disclosure placeholder) ---
+    document.getElementById("date-range").addEventListener("change", function() {
+      showStatus("Date filter applied: " + this.value, "success");
+      // In production: filter chart data by date range
+    });
   </script>
 </body>
 </html>
