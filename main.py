@@ -12,14 +12,15 @@ import os
 import logging
 import sys
 from typing import Optional
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
 
 # Global buffer to store partial data
 latest_prediction_result = None
 latest_iot_data = {}
 latest_iot_time = None
 required_fields = {"voltage", "current", "temperature", "power", "vibration", "humidity"}
-
-
 
 # Set up basic logging to stdout (for Render)
 logging.basicConfig(
@@ -30,6 +31,8 @@ logging.basicConfig(
 
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 # CORS setup
 app.add_middleware(
@@ -138,9 +141,9 @@ async def get_prediction():
             raise RuntimeError("Model not loaded.")
 
         # Simulate IoT sensor data
-        voltage = round(random.uniform(100, 250), 2)
-        current = round(random.uniform(0.1, 10), 2)
-        temperature = round(random.uniform(10, 100), 2)
+        voltage = round(random.uniform(230, 233), 2)
+        current = round(random.uniform(0.2, 0.40), 2)
+        temperature = round(random.uniform(30, 45), 2)
         power = round(voltage * current, 2)
         vibration = round(random.uniform(0.0, 1.0), 2)
         humidity = round(random.uniform(35.0, 40.0), 2)
@@ -221,7 +224,6 @@ def predict_iot(data: SensorData):
         latest_iot_data.update(incoming_data)
         latest_iot_time = datetime.now()
         logging.debug(f"🗃️ Updated latest_iot_data: {latest_iot_data}")
-        logging.debug(f"🕒 Updated latest_iot_time: {latest_iot_time}")
 
         # Step 2: Check for missing fields
         missing = required_fields - latest_iot_data.keys()

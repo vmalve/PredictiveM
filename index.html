@@ -5,45 +5,161 @@
   <title>Sensor Prediction Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
+    body
+    {
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                 Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f0f4f8;
+    color: #1a1a1a;
+  }
+
+     {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #f0f4f8;
+      color: #1a1a1a;
+    }
+    
+
+    /* Navbar */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      background-color: #ffffff;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
     }
 
-    h1, h2 {
-      color: #2c3e50;
+    .navbar .logo {
+      font-weight: 700;
+      font-size: 24px;
+      color: #007f5f;
+    }
+
+    .navbar ul {
+      list-style: none;
+      display: flex;
+      gap: 24px;
+      margin: 0;
+      padding: 0;
+    }
+
+    .navbar ul li a {
+      text-decoration: none;
+      color: #333;
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+
+    .navbar ul li a:hover {
+      color: #00b07c;
+    }
+
+    .navbar .cta {
+      background-color: #00b07c;
+      padding: 10px 18px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background-color 0.3s;
+    }
+
+    .navbar .cta:hover {
+      background-color: #009268;
+    }
+
+    /* Main Content */
+    .main {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
+      text-align: center;
+    }
+
+    .main h1 {
+      font-size: 42px;
+      font-weight: 700;
+      margin-bottom: 30px;
+      color: #007f5f;
+    }
+
+    .main img {
+      width: 100%;
+      max-width: 800px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+      margin-bottom: 40px;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.06);
+      margin-bottom: 40px;
+    }
+
+    .container h2 {
+      margin-top: 10px;
+      color: #005f73;
     }
 
     label {
       display: inline-block;
       width: 120px;
+      font-weight: bold;
     }
 
-    input[type="number"] {
-      width: 100px;
+    input[type="number"], select {
+      padding: 8px;
+      margin: 6px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      width: 180px;
+    }
+
+    input[type="submit"] {
+      margin-top: 15px;
+      padding: 12px 24px;
+      background-color: #3498db;
+      border: none;
+      color: white;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    input[type="submit"]:hover {
+      background-color: #2980b9;
+    }
+
+    select {
+      width: 220px;
     }
 
     #result {
       margin-top: 20px;
-      background: #ecf0f1;
-      padding: 10px;
-      border-radius: 6px;
-      width: fit-content;
-    }
-
-    canvas {
-      margin-top: 20px;
+      background: #e0f7fa;
+      padding: 18px;
+      border-radius: 10px;
+      font-size: 18px;
     }
 
     #trend-container {
       display: none;
+      margin-top: 40px;
     }
 
     #status-bar {
       margin-top: 15px;
-      padding: 10px;
-      border-radius: 5px;
+      padding: 12px;
+      border-radius: 6px;
       display: none;
+      font-weight: bold;
     }
 
     #status-bar.warning {
@@ -55,44 +171,89 @@
       background-color: #d4edda;
       color: #155724;
     }
+
+    .form-row {
+      margin-bottom: 16px;
+    }
+
+    /* Emojis & Color Effects */
+    h1::before {
+      content: "📡 ";
+    }
+
+    h2::before {
+      content: "📊 ";
+      margin-right: 6px;
+    }
+
+    #result p span {
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    .highlight {
+      background: #fef3c7;
+      padding: 4px 10px;
+      border-radius: 6px;
+      color: #b45309;
+    }
+
   </style>
 </head>
 <body>
-  <h1>Sensor Prediction Dashboard</h1>
 
-  <h2>Select Mode</h2>
-  <select id="mode">
-    <option value="manual">Manual Input</option>
-    <option value="auto">Auto Refresh</option>
-    <option value="iot-graph">IOT Refresh</option>
-  </select>
-  <br><br>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="logo">⚙️ Predictix Systems</div>
+    <ul>
+      <li><a href="#">Dashboard</a></li>
+      <li><a href="#">Trends</a></li>
+      <li><a href="#">Settings</a></li>
+    </ul>
+    <div>
+      <a href="#" style="margin-right: 16px;">Log in</a>
+      <a href="#" class="cta">🚀 Try for free</a>
+    </div>
+  </nav>
 
-  <div id="manual-form-container">
-    <h2>Enter Sensor Data</h2>
-    <form id="manual-form">
-      <label>Voltage:</label><input type="number" id="voltage" step="any" value="110"><br><br>
-      <label>Current:</label><input type="number" id="current" step="any" value="0.5"><br><br>
-      <label>Temperature:</label><input type="number" id="temperature" step="any" value="20"><br><br>
-      <label>Power:</label><input type="number" id="power" step="any" value="55"><br><br>
-      <label>Vibration:</label><input type="number" id="vibration" step="any" value="0.2"><br><br>
-      <input type="submit" value="Submit">
-    </form>
+  <!-- Main Section -->
+  <div class="main">
+    <h1>Sensor Prediction Dashboard</h1>
+   <img src="static/sensor.jpeg" alt="Sensor Graph">
+    <div class="container">
+      <h2>🧭 Select Mode</h2>
+      <select id="mode">
+        <option value="manual">Manual Input</option>
+        <option value="auto">Auto Refresh</option>
+        <option value="iot-graph">IoT Graph</option>
+      </select>
+
+      <div id="manual-form-container">
+        <h2>🔢 Enter Sensor Data</h2>
+        <form id="manual-form">
+          <div class="form-row"><label>Voltage:</label><input type="number" id="voltage" step="any" value="230"></div>
+          <div class="form-row"><label>Current:</label><input type="number" id="current" step="any" value="0.35"></div>
+          <div class="form-row"><label>Temperature:</label><input type="number" id="temperature" step="any" value="35"></div>
+          <div class="form-row"><label>Power:</label><input type="number" id="power" step="any" value="79"></div>
+          <div class="form-row"><label>Vibration:</label><input type="number" id="vibration" step="any" value="0.2"></div>
+          <input type="submit" value="Submit 🔍">
+        </form>
+      </div>
+
+      <h2>✅ Prediction Result</h2>
+      <div id="result">
+        <p>Prediction: <span id="prediction">Not Yet Predicted</span></p>
+        <p>Probability: <span id="probability">N/A</span></p>
+      </div>
+
+      <div id="status-bar"></div>
+
+      <div id="trend-container">
+        <h2>📈 Probability Trend (IoT Mode)</h2>
+        <canvas id="probabilityChart" width="700" height="300"></canvas>
+      </div>
+    </div>
   </div>
-
-  <h2>Prediction Result:</h2>
-  <div id="result">
-    <p>Prediction: <span id="prediction">Not Yet Predicted</span></p>
-    <p>Probability: <span id="probability">N/A</span></p>
-  </div>
-
-  <div id="status-bar"></div>
-
-  <div id="trend-container">
-    <h2>Probability Trend (IoT Mode)</h2>
-    <canvas id="probabilityChart" width="600" height="300"></canvas>
-  </div>
-
   <script>
     const manualForm = document.getElementById("manual-form");
     const modeSelector = document.getElementById("mode");
@@ -100,28 +261,38 @@
     const statusBar = document.getElementById("status-bar");
 
     const ctx = document.getElementById('probabilityChart').getContext('2d');
-    const probabilityData = {
-      labels: [],
-      datasets: [
-        {
-          label: 'Prediction Probability',
-          data: [],
-          borderColor: 'blue',
-          fill: false,
-          tension: 0.1
-        },
-        {
-          label: 'Threshold (0.5)',
-          data: [],
-          borderColor: 'red',
-          borderDash: [5, 5],
-          fill: false,
-          pointRadius: 0,
-          tension: 0
-        }
-      ]
-    };
+    
 
+  const probabilityData = {
+  labels: [],
+  datasets: [
+    {
+      label: 'Prediction Probability',
+      data: [],
+      borderColor: 'blue',
+      fill: false,
+      tension: 0.1
+    },
+    {
+      label: 'Threshold (0.5)',
+      data: [],
+      borderColor: 'red',
+      borderDash: [5, 5],
+      fill: false,
+      pointRadius: 0,
+      tension: 0
+    },
+    {
+      label: 'Threshold (0.8)',
+      data: [],
+      borderColor: 'green',
+      borderDash: [5, 5],
+      fill: false,
+      pointRadius: 0,
+      tension: 0
+    }
+  ]
+};
     const probabilityChart = new Chart(ctx, {
       type: 'line',
       data: probabilityData,
@@ -138,6 +309,7 @@
 
     manualForm.addEventListener("submit", function(event) {
       event.preventDefault();
+      
 
       const voltage = parseFloat(document.getElementById("voltage").value);
       const current = parseFloat(document.getElementById("current").value);
@@ -222,8 +394,14 @@ function updateGraph(data) {
 
   probabilityData.labels.push(timestamp);
   probabilityData.datasets[0].data.push(prob);
-  probabilityData.datasets[1].data.push(0.5);
 
+  if (probabilityChart?.data?.datasets[1]) {
+  probabilityChart.data.datasets[1].data.push(0.5); // Threshold 0.5
+}
+
+if (probabilityChart?.data?.datasets[2]) {
+  probabilityChart.data.datasets[2].data.push(0.8); // Threshold 0.8
+}
   // Debugging chart update
   console.log("Updated chart data:", probabilityData);
 
