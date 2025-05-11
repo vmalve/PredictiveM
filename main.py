@@ -31,7 +31,8 @@ logging.basicConfig(
 
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory="."), name="static")
+
 
 
 # CORS setup
