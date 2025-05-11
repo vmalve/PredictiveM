@@ -40,7 +40,7 @@ app.add_middleware(
 )
 
 # Constants
-IOT_DATA_EXPIRY_SECONDS = 0.1  # 100 ms: Only combine readings within 100 ms
+IOT_DATA_EXPIRY_SECONDS = 5  # 100 ms: Only combine readings within 100 ms
 
 MODEL_PATH = os.path.join(os.getcwd(), 'random_forest_model.pkl')
 

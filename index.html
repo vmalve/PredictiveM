@@ -260,6 +260,110 @@
       .container { padding: 14px 8px; }
       .navbar { flex-direction: column; gap: 10px; padding: 12px 8px; }
     }
+    /* Chatbot styles (same as before) ... */
+    #chatbot-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 320px;
+      background: var(--card-bg);
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      font-family: inherit;
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+      user-select: none;
+      transition: box-shadow 0.2s;
+    }
+    #chatbot-header {
+      background-color: var(--primary);
+      color: white;
+      padding: 10px 36px 10px 10px;
+      border-radius: 12px 12px 0 0;
+      font-weight: bold;
+      text-align: left;
+      cursor: move;
+      position: relative;
+      user-select: none;
+    }
+    #chatbot-minimize {
+      position: absolute;
+      right: 10px;
+      top: 7px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      line-height: 1;
+      padding: 0 6px;
+      border-radius: 4px;
+    }
+    #chatbot-body {
+      display: flex;
+      flex-direction: column;
+    }
+    #chatbot-messages {
+      padding: 10px;
+      height: 200px;
+      overflow-y: auto;
+      font-size: 14px;
+      background: #f9f9f9;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .chatbot-bubble.user {
+      align-self: flex-end;
+      background: #e0f7fa;
+      color: #007f5f;
+      border-radius: 12px 12px 0 12px;
+      padding: 8px 14px;
+      max-width: 80%;
+      word-break: break-word;
+    }
+    .chatbot-bubble.bot {
+      align-self: flex-start;
+      background: #f0f0f0;
+      color: #222;
+      border-radius: 12px 12px 12px 0;
+      padding: 8px 14px;
+      max-width: 80%;
+      word-break: break-word;
+    }
+    #chatbot-quickreplies {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 8px 0 0 0;
+    }
+    .chatbot-quickreply {
+      background: #00b07c;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    #chatbot-input {
+      border: none;
+      border-top: 1px solid #ccc;
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 0 0 12px 12px;
+    }
+    #chatbot-container.minimized #chatbot-body,
+    #chatbot-container.minimized #chatbot-quickreplies {
+      display: none;
+    }
+    a:focus, input:focus, select:focus, .chatbot-quickreply:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
   </style>
 </head>
 <body>
@@ -332,7 +436,7 @@
         </form>
       </div>
 
-      <h2>.</h2>
+      <h2>Prediction Result</h2>
       <div id="result" aria-live="polite"></div>
       <div id="status-bar" role="status"></div>
       <div class="alert" id="alert-no-data">No IoT data received in the last 2 minutes.</div>
@@ -340,6 +444,19 @@
         <h2>Probability Trend (IoT Mode)</h2>
         <canvas id="probabilityChart" width="700" height="300" aria-label="Probability Trend Chart"></canvas>
       </div>
+    </div>
+  </div>
+
+  <!-- Chatbot -->
+  <div id="chatbot-container" aria-label="Chat Assistant">
+    <div id="chatbot-header">
+      🤖 Chat Assistant
+      <button id="chatbot-minimize" title="Minimize">–</button>
+    </div>
+    <div id="chatbot-body">
+      <div id="chatbot-messages"></div>
+      <div id="chatbot-quickreplies"></div>
+      <input type="text" id="chatbot-input" placeholder="Ask me something..." aria-label="Chatbot Input" autocomplete="off" />
     </div>
   </div>
 
@@ -490,97 +607,3 @@
           updateGraph(data);
           showStatus("IoT data received successfully.", "success");
           lastIoTUpdate = Date.now();
-          hideNoIoTData();
-        })
-        .catch(error => {
-          showStatus("Error fetching IoT data.", "warning");
-        });
-    }
-
-    function updateGraph(data) {
-      const timestamp = new Date().toLocaleTimeString();
-      const prob = data.probability;
-      resultDiv.innerHTML =
-        `<p>Prediction: <span id="prediction">${data.prediction}</span></p>
-         <p>Probability: <span id="probability">${typeof prob === 'number' ? prob.toFixed(2) : "N/A"}</span></p>`;
-      resultDiv.style.display = "block";
-      kpiPrediction.textContent = data.prediction;
-      kpiPredStatus.textContent = "Auto/IoT";
-      kpiProb.textContent = (prob*100).toFixed(1) + "%";
-      kpiProbStatus.textContent = prob > 0.8 ? "High Risk" : "Normal";
-      kpiProbStatus.style.background = prob > 0.8 ? "#ffe5e5" : "#e0f7fa";
-      kpiProbStatus.style.color = prob > 0.8 ? "#d50000" : "#007f5f";
-
-      if (probabilityData.labels.length >= 20) {
-        probabilityData.labels.shift();
-        probabilityData.datasets[0].data.shift();
-        probabilityData.datasets[1].data.shift();
-        probabilityData.datasets[2].data.shift();
-      }
-      probabilityData.labels.push(timestamp);
-      probabilityData.datasets[0].data.push(prob);
-      probabilityData.datasets[1].data.push(0.5);
-      probabilityData.datasets[2].data.push(0.8);
-      probabilityChart.update();
-    }
-
-    function showStatus(message, type) {
-      statusBar.textContent = message;
-      statusBar.className = "status-bar " + (type === "success" ? "success" : "warning");
-      statusBar.style.display = "block";
-    }
-
-    function showNoIoTData() {
-      alertNoData.style.display = "block";
-      resultDiv.style.display = "none";
-      kpiPrediction.textContent = "N/A";
-      kpiPredStatus.textContent = "No Data";
-      kpiProb.textContent = "N/A";
-      kpiProbStatus.textContent = "No Data";
-      probabilityData.labels = [];
-      probabilityData.datasets.forEach(ds => ds.data = []);
-      probabilityChart.update();
-    }
-
-    function hideNoIoTData() {
-      alertNoData.style.display = "none";
-    }
-
-    // --- Mode switching and filters ---
-    modeSelector.addEventListener("change", () => {
-      const mode = modeSelector.value;
-      clearInterval(window.autoInterval);
-      if (mode === "manual") {
-        document.getElementById("manual-form-container").style.display = "block";
-        trendContainer.style.display = "none";
-        statusBar.style.display = "none";
-      } else if (mode === "auto") {
-        document.getElementById("manual-form-container").style.display = "none";
-        trendContainer.style.display = "block";
-        fetchAuto();
-        window.autoInterval = setInterval(fetchAuto, 5000);
-      } else if (mode === "iot-graph") {
-        document.getElementById("manual-form-container").style.display = "none";
-        trendContainer.style.display = "block";
-        fetchRealIoT();
-        window.autoInterval = setInterval(fetchRealIoT, 5000);
-      }
-    });
-    window.addEventListener("beforeunload", () => clearInterval(window.autoInterval));
-    modeSelector.dispatchEvent(new Event("change"));
-
-    // --- Data gap detection for IoT mode ---
-    setInterval(() => {
-      if (modeSelector.value === "iot-graph" && Date.now() - lastIoTUpdate > 2 * 60 * 1000) {
-        showNoIoTData();
-      }
-    }, 10000);
-
-    // --- Date Range Filter (progressive disclosure placeholder) ---
-    document.getElementById("date-range").addEventListener("change", function() {
-      showStatus("Date filter applied: " + this.value, "success");
-      // In production: filter chart data by date range
-    });
-  </script>
-</body>
-</html>
