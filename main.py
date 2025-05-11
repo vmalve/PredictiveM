@@ -13,12 +13,19 @@ import logging
 import sys
 from typing import Optional
 from fastapi.staticfiles import StaticFiles
+from threading import Lock
+from datetime import datetime, timedelta
 
-# Global buffer to store partial data
+# Add these global variables at the top with other globals
+iot_buffer_lock = Lock()
+IOT_DATA_EXPIRY_SECONDS = 15  # Increased to 15 seconds for sensor sync
+
+# Global state with thread safety
 latest_prediction_result = None
 latest_iot_data = {}
 latest_iot_time = None
 required_fields = {"voltage", "current", "temperature", "power", "vibration", "humidity"}
+
 
 # Set up basic logging to stdout (for Render)
 logging.basicConfig(
@@ -189,76 +196,70 @@ async def predict_iotLive():
             "error": str(e)
         }
 
+
+
 @app.post("/predict_iot")
 def predict_iot(data: SensorData):
     global latest_iot_data, latest_iot_time, latest_prediction_result
-
-    try:
-        now = datetime.now()
-
-        # If buffer is too old, clear it before merging new data
-        if latest_iot_time is not None:
-            age = (now - latest_iot_time).total_seconds()
-            if age > IOT_DATA_EXPIRY_SECONDS:
+    
+    with iot_buffer_lock:  # Thread-safe access to shared resources
+        try:
+            now = datetime.now()
+            
+            # Clear buffer if data is too old
+            if latest_iot_time and (now - latest_iot_time).total_seconds() > IOT_DATA_EXPIRY_SECONDS:
                 latest_iot_data.clear()
-                logging.info(f"🧹 Cleared stale buffer (age={age:.3f}s)")
-
-        # Merge incoming partial data
-        incoming_data = data.dict(exclude_unset=True)
-        logging.debug(f"📥 Incoming partial data: {incoming_data}")
-
-        latest_iot_data.update(incoming_data)
-        latest_iot_time = now
-        logging.debug(f"🗃️ Updated latest_iot_data: {latest_iot_data}")
-
-        # Check for missing fields
-        missing = required_fields - latest_iot_data.keys()
-        if missing:
-            logging.debug(f"⏳ Missing fields: {missing}")
-            return {"status": "Waiting for more data", "missing_fields": list(missing)}
-
-        logging.debug(f"✅ All required fields received. Proceeding to prediction.")
-
-        # Convert to DataFrame
-        df = pd.DataFrame([latest_iot_data])
-        logging.debug(f"📊 Raw DataFrame: {df}")
-
-        input_data = df.rename(columns={
-            "voltage": "Voltage",
-            "current": "Current",
-            "temperature": "Temperature",
-            "power": "Power",
-            "vibration": "Vibration",
-            "humidity": "Humidity"
-        })
-        logging.debug(f"🔄 Renamed input data: {input_data}")
-
-        input_df = input_data[expected_fields]
-        logging.debug(f"📥 Final input for model: {input_df}")
-
-        # Predict
-        prediction = model.predict(input_df)[0]
-        probability = model.predict_proba(input_df)[0][1]
-        prediction = 1 if probability > 0.5 else 0
-
-        latest_prediction_result = {
-            "prediction": int(prediction),
-            "probability": float(probability),
-            "timestamp": datetime.now().isoformat()
-        }
-
-        logging.debug(f"🤖 Prediction: {prediction}, Probability: {probability}")
-
-        # Clear buffer after prediction
-        latest_iot_data.clear()
-        logging.debug("🧹 Cleared latest_iot_data after prediction.")
-
-        return {"prediction": int(prediction), "probability": float(probability)}
-
-    except Exception as e:
-        logging.error("❌ Error during IoT prediction:", exc_info=True)
-        return {
-            "prediction": "Error",
-            "probability": 0.0,
-            "error": str(e)
-        }
+                logging.info("🧹 Cleared stale buffer due to expiry")
+            
+            # Merge new data atomically
+            incoming_data = {k: v for k, v in data.dict().items() if v is not None}
+            latest_iot_data.update(incoming_data)
+            latest_iot_time = now
+            
+            logging.debug(f"📥 Merged data: {latest_iot_data}")
+            
+            # Check for missing fields
+            missing = required_fields - latest_iot_data.keys()
+            if missing:
+                logging.info(f"⏳ Awaiting fields: {', '.join(missing)}")
+                return {
+                    "status": "partial",
+                    "received": list(latest_iot_data.keys()),
+                    "missing": list(missing)
+                }
+            
+            # Convert and validate data
+            input_df = pd.DataFrame([latest_iot_data]).rename(columns={
+                "voltage": "Voltage",
+                "current": "Current",
+                "temperature": "Temperature",
+                "power": "Power",
+                "vibration": "Vibration",
+                "humidity": "Humidity"
+            })[expected_fields]
+            
+            # Make prediction
+            probability = model.predict_proba(input_df)[0][1]
+            prediction = int(probability > 0.5)
+            
+            # Update global prediction state
+            latest_prediction_result = {
+                "prediction": prediction,
+                "probability": probability,
+                "timestamp": now.isoformat()
+            }
+            
+            # Clear buffer for new data cycle
+            latest_iot_data.clear()
+            logging.info("✅ Prediction successful - buffer reset")
+            
+            return latest_prediction_result
+            
+        except Exception as e:
+            logging.error("❌ Prediction failed:", exc_info=True)
+            latest_iot_data.clear()
+            return {
+                "error": str(e),
+                "prediction": -1,
+                "probability": 0.0
+            }
