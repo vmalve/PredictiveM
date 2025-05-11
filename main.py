@@ -72,14 +72,14 @@ except Exception as e:
     traceback.print_exc()
     model = None
 
+from typing import Optional
 class SensorData(BaseModel):
-    voltage: float
-    current: float
-    temperature: float
-    power: float
-    vibration: float
-    humidity: Optional[float] = 35  # ✅ Default value
-    
+    voltage: Optional[float] = None
+    current: Optional[float] = None
+    temperature: Optional[float] = None
+    power: Optional[float] = None
+    vibration: Optional[float] = None
+    humidity: Optional[float] = None
 
 
 # Serve index.html from root
