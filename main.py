@@ -339,19 +339,19 @@ def predict_iot(data: SensorData):
             # Calculate power if we have current and voltage
             if 'current' in latest_iot_data and 'voltage' in latest_iot_data:
                 latest_iot_data['power'] = latest_iot_data['current'] * latest_iot_data['voltage']
-                logging.info(f"⚡ Calculated power: {latest_iot_data['power']}W")
+                # logging.info(f"⚡ Calculated power: {latest_iot_data['power']}W")
 
                 # --- Calculate vibration once current is available ---
                 live_vibration = calculate_vibration(latest_iot_data['current'])
                 if live_vibration is not None:
                     latest_iot_data['vibration'] = live_vibration
-                    logging.info(f"🟢 Calculated vibration: {live_vibration}")
+                    # logging.info(f"🟢 Calculated vibration: {live_vibration}")
 
                 # --- Calculate humidity (if you have a function) ---
                 live_humidity = get_humidity()
                 if live_humidity is not None:
                        latest_iot_data['humidity'] = live_humidity
-                       logging.info(f"🟢 Calculated humidity: {live_humidity}")
+                       # logging.info(f"🟢 Calculated humidity: {live_humidity}")
 
             # Check required fields (excluding power since we calculate it)
             required_fields = {"voltage", "current", "temperature", "vibration", "humidity"}
