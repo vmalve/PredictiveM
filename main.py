@@ -15,6 +15,8 @@ from typing import Optional
 from fastapi.staticfiles import StaticFiles
 from threading import Lock
 from datetime import datetime, timedelta
+import requests
+import time
 
 # Add these global variables at the top with other globals
 iot_buffer_lock = Lock()
@@ -86,8 +88,7 @@ cached_data = None
 cache_timestamp = 0
 CACHE_DURATION = 1800  # 30 minutes
 
-import requests
-import time
+
 
 # Initialize cache variables
 cached_data = None
@@ -142,10 +143,10 @@ import random
 
 def Current_random():
     r = random.random()
-    if r < 0.90:
-        return round(random.uniform(0.2, 0.3), 2)
-    elif r < 0.95:
-        return round(random.uniform(0.3, 0.35), 2)
+    if r < 0.95:
+        return round(random.uniform(0.28, 0.3), 2)
+    elif r < 0.98:
+        return round(random.uniform(0.3, 0.33), 2)
     else:
         return round(random.uniform(0.35, 0.4), 2)
 
