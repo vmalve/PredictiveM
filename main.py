@@ -365,6 +365,9 @@ def predict_iot(data: SensorData):
                     "missing": list(missing)
                 }
 
+
+            logging.info(f"📥 Received fields for prediction: {latest_iot_data}")
+
             # Prepare data for prediction
             input_df = pd.DataFrame([latest_iot_data]).rename(columns={
                 "voltage": "Voltage",
