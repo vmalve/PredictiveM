@@ -168,7 +168,7 @@ def calculate_vibration(current: float) -> float:
     # Add noise in the range [-0.05, 0.05]
     noise = random.uniform(-0.05, 0.05)
 
-    # Compute vibration and clamp to [0.0, 1.0]
+    # Compute vibration and clamp to [0.0, 0.4]
     vibration = round(normalized_current + noise, 2)
     return max(0.0, min(vibration, 1.0))
 
