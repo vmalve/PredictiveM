@@ -150,6 +150,29 @@ def Current_random():
     else:
         return round(random.uniform(0.35, 0.4), 2)
 
+import random
+
+def calculate_vibration(current: float) -> float:
+    """
+    Converts current to a vibration value in the range [0.0, 1.0].
+
+    Parameters:
+        current (float): The input current value.
+
+    Returns:
+        float: Simulated vibration value.
+    """
+    # Normalize current to [0, 1] based on max expected current of 0.4
+    normalized_current = current / 0.4
+
+    # Add noise in the range [-0.05, 0.05]
+    noise = random.uniform(-0.05, 0.05)
+
+    # Compute vibration and clamp to [0.0, 1.0]
+    vibration = round(normalized_current + noise, 2)
+    return max(0.0, min(vibration, 1.0))
+
+
 
 # Manual prediction (no effect on IoT state)
 @app.post("/predict/manual")
@@ -227,20 +250,11 @@ async def get_prediction():
         if live_temp is not None:
             temperature = live_temp
 
+         ########### Vibration ############
+        live_vibration = calculate_vibration(current)
+        if live_vibration is not None:
+            vibration = live_vibration
        
-        ###########Vibration############
-        # Normalize current to [0, 1]
-        normalized_current = current / 0.4  # 0.4 is the max expected current
-
-        # Add optional noise to simulate variation
-        noise = random.uniform(-0.05, 0.05)
-
-        # Calculate vibration
-        vibration = round(normalized_current + noise, 2)
-
-        # Clamp vibration to [0.0, 1.0]
-        vibration = max(0.0, min(vibration, 1.0))
-
         print(f"🔄 Auto-refresh simulated input: voltage={voltage}, current={current}, temperature={temperature}, power={power}, vibration={vibration}")
 
         input_data = pd.DataFrame([{
@@ -300,15 +314,14 @@ async def predict_iotLive():
             "error": str(e)
         }
 
-
 @app.post("/predict_iot")
 def predict_iot(data: SensorData):
     global latest_iot_data, latest_iot_time, latest_prediction_result
-    
+
     with iot_buffer_lock:  # Thread-safe access
         try:
             now = datetime.now()
-            
+
             # Clear buffer if data is too old
             if latest_iot_time and (now - latest_iot_time).total_seconds() > IOT_DATA_EXPIRY_SECONDS:
                 latest_iot_data.clear()
@@ -323,16 +336,27 @@ def predict_iot(data: SensorData):
             logging.info(f"📥 Received fields this request: {list(incoming_data.keys())}")
             logging.info(f"📦 Current buffer state: {list(latest_iot_data.keys())}")
 
-
             # Calculate power if we have current and voltage
             if 'current' in latest_iot_data and 'voltage' in latest_iot_data:
                 latest_iot_data['power'] = latest_iot_data['current'] * latest_iot_data['voltage']
                 logging.info(f"⚡ Calculated power: {latest_iot_data['power']}W")
 
+                # --- Calculate vibration once current is available ---
+                live_vibration = calculate_vibration(latest_iot_data['current'])
+                if live_vibration is not None:
+                    latest_iot_data['vibration'] = live_vibration
+                    logging.info(f"🟢 Calculated vibration: {live_vibration}")
+
+                # --- Calculate humidity (if you have a function) ---
+                live_humidity = get_humidity()
+                if live_humidity is not None:
+                       latest_iot_data['humidity'] = live_humidity
+                       logging.info(f"🟢 Calculated humidity: {live_humidity}")
+
             # Check required fields (excluding power since we calculate it)
             required_fields = {"voltage", "current", "temperature", "vibration", "humidity"}
             missing = required_fields - latest_iot_data.keys()
-            
+
             if missing:
                 logging.info(f"⏳ Awaiting fields: {', '.join(missing)}")
                 return {
@@ -346,7 +370,7 @@ def predict_iot(data: SensorData):
                 "voltage": "Voltage",
                 "current": "Current",
                 "temperature": "Temperature",
-                "power": "Power",  # This is now calculated
+                "power": "Power",
                 "vibration": "Vibration",
                 "humidity": "Humidity"
             })[expected_fields]
@@ -365,7 +389,7 @@ def predict_iot(data: SensorData):
             # Clear buffer for new data cycle
             latest_iot_data.clear()
             logging.info("✅ Prediction successful - buffer reset")
-            
+
             return latest_prediction_result
 
         except Exception as e:
