@@ -6,4 +6,5 @@ joblib
 python-multipart
 jinja2
 pandas
-
+pydantic
+requests
