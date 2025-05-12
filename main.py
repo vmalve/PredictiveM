@@ -392,6 +392,7 @@ def predict_iot(data: SensorData):
 
             # Clear buffer for new data cycle
             latest_iot_data.clear()
+            logging.info(f"🧠 Prediction: {prediction}, Probability: {probability:.4f}")
             logging.info("✅ Prediction successful - buffer reset")
 
             return latest_prediction_result
