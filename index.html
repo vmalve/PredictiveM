@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Predictive Maintenance Dashboard</title>
+  <title>Sensor Prediction Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -25,6 +25,8 @@
       background-color: var(--bg);
       color: var(--text-main);
     }
+
+    /* Navbar */
     .navbar {
       display: flex;
       justify-content: space-between;
@@ -78,6 +80,8 @@
       background-color: #009268;
       outline: none;
     }
+
+    /* Main Content */
     .main {
       max-width: 1200px;
       margin: 36px auto 0 auto;
@@ -100,12 +104,15 @@
       margin-left: auto;
       margin-right: auto;
     }
+
+    /* Dashboard grid */
     .dashboard-grid {
       display: grid;
       gap: 32px;
       grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
       margin-bottom: 40px;
     }
+
     .kpi-card {
       background: var(--card-bg);
       border-radius: 14px;
@@ -137,6 +144,8 @@
       background: var(--kpi-bg);
       color: var(--primary);
     }
+
+    /* Container for forms and charts */
     .container {
       background: var(--card-bg);
       padding: 28px 24px;
@@ -150,6 +159,8 @@
       font-size: 1.3rem;
       margin-bottom: 18px;
     }
+
+    /* Filter bar */
     .filter-bar {
       display: flex;
       gap: 16px;
@@ -169,6 +180,8 @@
       margin-right: 12px;
       background: #f7fafc;
     }
+
+    /* Form styles */
     label {
       display: inline-block;
       width: 120px;
@@ -206,6 +219,8 @@
       align-items: center;
       gap: 10px;
     }
+
+    /* Results and status */
     #result {
       margin-top: 16px;
       background: var(--kpi-bg);
@@ -213,7 +228,10 @@
       border-radius: 10px;
       font-size: 1.1rem;
       text-align: left;
-      display: none;
+    }
+    #result p span {
+      font-weight: bold;
+      color: #2c3e50;
     }
     #status-bar {
       margin-top: 12px;
@@ -231,6 +249,8 @@
       background-color: var(--success);
       color: #155724;
     }
+
+    /* Chart */
     #trend-container {
       display: none;
       margin-top: 32px;
@@ -245,20 +265,121 @@
       padding: 12px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
-    .alert {
-      background: var(--warning);
-      color: #333;
-      padding: 10px 16px;
-      border-radius: 8px;
-      margin: 16px 0;
-      font-weight: 600;
+
+    /* Chatbot */
+    #chatbot-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 320px;
+      background: var(--card-bg);
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      font-family: inherit;
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+      user-select: none;
+      transition: box-shadow 0.2s;
+    }
+    #chatbot-header {
+      background-color: var(--primary);
+      color: white;
+      padding: 10px 36px 10px 10px;
+      border-radius: 12px 12px 0 0;
+      font-weight: bold;
+      text-align: left;
+      cursor: move;
+      position: relative;
+      user-select: none;
+    }
+    #chatbot-minimize {
+      position: absolute;
+      right: 10px;
+      top: 7px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      line-height: 1;
+      padding: 0 6px;
+      border-radius: 4px;
+    }
+    #chatbot-body {
+      display: flex;
+      flex-direction: column;
+    }
+    #chatbot-messages {
+      padding: 10px;
+      height: 200px;
+      overflow-y: auto;
+      font-size: 14px;
+      background: #f9f9f9;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .chatbot-bubble.user {
+      align-self: flex-end;
+      background: #e0f7fa;
+      color: #007f5f;
+      border-radius: 12px 12px 0 12px;
+      padding: 8px 14px;
+      max-width: 80%;
+      word-break: break-word;
+    }
+    .chatbot-bubble.bot {
+      align-self: flex-start;
+      background: #f0f0f0;
+      color: #222;
+      border-radius: 12px 12px 12px 0;
+      padding: 8px 14px;
+      max-width: 80%;
+      word-break: break-word;
+    }
+    #chatbot-quickreplies {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 8px 0 0 0;
+    }
+    .chatbot-quickreply {
+      background: #00b07c;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    #chatbot-input {
+      border: none;
+      border-top: 1px solid #ccc;
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 0 0 12px 12px;
+    }
+    #chatbot-container.minimized #chatbot-body,
+    #chatbot-container.minimized #chatbot-quickreplies {
       display: none;
     }
+
+    /* Accessibility: Focus outlines */
+    a:focus, input:focus, select:focus, .chatbot-quickreply:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    /* Responsive */
     @media (max-width: 700px) {
       .main h1 { font-size: 1.5rem; }
       .dashboard-grid { grid-template-columns: 1fr; }
       .container { padding: 14px 8px; }
       .navbar { flex-direction: column; gap: 10px; padding: 12px 8px; }
+      #chatbot-container { width: 98vw; right: 1vw; }
     }
   </style>
 </head>
@@ -280,7 +401,7 @@
 
   <!-- Main Section -->
   <div class="main">
-    <h1>Predictive Maintenance Dashboard</h1>
+    <h1>Sensor Prediction Dashboard</h1>
     <img src="static/sensor.jpeg" alt="Sensor Graph"
          onerror="this.onerror=null;this.src='https://via.placeholder.com/800x400?text=Sensor+Image+Not+Found';">
 
@@ -328,18 +449,34 @@
           <div class="form-row"><label for="temperature">Temperature:</label><input type="number" id="temperature" step="any" value="35" required aria-required="true"></div>
           <div class="form-row"><label for="power">Power:</label><input type="number" id="power" step="any" value="79" required aria-required="true"></div>
           <div class="form-row"><label for="vibration">Vibration:</label><input type="number" id="vibration" step="any" value="0.2" required aria-required="true"></div>
+          <div class="form-row"><label for="humidity">Humidity:</label><input type="number" id="humidity" step="any" value="35" required aria-required="true"></div>
           <input type="submit" value="Submit 🔍">
         </form>
       </div>
 
-      <h2>.</h2>
-      <div id="result" aria-live="polite"></div>
+      <h2</h2>
+<div id="result" style="display: none;" aria-live="polite">
+        <p>Prediction: <span id="prediction">Not Yet Predicted</span></p>
+        <p>Probability: <span id="probability">N/A</span></p>
+      </div>
       <div id="status-bar" role="status"></div>
-      <div class="alert" id="alert-no-data">No IoT data received in the last 1 minute.</div>
       <div id="trend-container">
         <h2>Probability Trend (IoT Mode)</h2>
         <canvas id="probabilityChart" width="700" height="300" aria-label="Probability Trend Chart"></canvas>
       </div>
+    </div>
+  </div>
+
+  <!-- Chatbot -->
+  <div id="chatbot-container" aria-label="Chat Assistant">
+    <div id="chatbot-header">
+      🤖 Chat Assistant
+      <button id="chatbot-minimize" title="Minimize">–</button>
+    </div>
+    <div id="chatbot-body">
+      <div id="chatbot-messages"></div>
+      <div id="chatbot-quickreplies"></div>
+      <input type="text" id="chatbot-input" placeholder="Ask me something..." aria-label="Chatbot Input" autocomplete="off" />
     </div>
   </div>
 
@@ -424,8 +561,6 @@
     const kpiProb = document.getElementById("kpi-prob");
     const kpiPredStatus = document.getElementById("kpi-pred-status");
     const kpiProbStatus = document.getElementById("kpi-prob-status");
-    const resultDiv = document.getElementById("result");
-    const alertNoData = document.getElementById("alert-no-data");
 
     manualForm.addEventListener("submit", function(event) {
       event.preventDefault();
@@ -434,8 +569,10 @@
       const temperature = parseFloat(document.getElementById("temperature").value);
       const power = parseFloat(document.getElementById("power").value);
       const vibration = parseFloat(document.getElementById("vibration").value);
+      const humidity = parseFloat(document.getElementById("humidity").value);
 
-      if (voltage < 0 || current < 0 || temperature < 0 || power < 0 || vibration < 0) {
+      // Simple validation
+      if (voltage < 0 || current < 0 || temperature < 0 || power < 0 || vibration < 0|| humidity < 0) {
         showStatus("All values must be positive.", "warning");
         return;
       }
@@ -443,23 +580,21 @@
       fetch('/predict/manual', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ voltage, current, temperature, power, vibration })
+        body: JSON.stringify({ voltage, current, temperature, power, vibration,humidity})
       })
       .then(res => res.json())
       .then(data => {
-        resultDiv.innerHTML =
-          `<p>Prediction: <span id="prediction">${data.prediction}</span></p>
-           <p>Probability: <span id="probability">${typeof data.probability === 'number' ? data.probability.toFixed(2) : 'N/A'}</span></p>`;
-        resultDiv.style.display = "block";
-        kpiPrediction.textContent = data.prediction;
-        kpiPredStatus.textContent = "Manual";
+        document.getElementById("prediction").textContent = data.prediction;
         if (typeof data.probability === 'number') {
+          document.getElementById("probability").textContent = data.probability.toFixed(2);
+          kpiPrediction.textContent = data.prediction;
+          kpiPredStatus.textContent = "Manual";
           kpiProb.textContent = (data.probability*100).toFixed(1) + "%";
           kpiProbStatus.textContent = data.probability > 0.8 ? "High Risk" : "Normal";
           kpiProbStatus.style.background = data.probability > 0.8 ? "#ffe5e5" : "#e0f7fa";
           kpiProbStatus.style.color = data.probability > 0.8 ? "#d50000" : "#007f5f";
         } else {
-          kpiProb.textContent = "N/A";
+          document.getElementById("probability").textContent = "N/A";
         }
         showStatus("Manual prediction successful.", "success");
       });
@@ -474,13 +609,13 @@
       });
     }
 
-    let lastIoTUpdate = Date.now();
-
     function fetchRealIoT() {
       fetch('/predict/iotLive')
         .then(res => {
           if (res.status === 204) {
-            showNoIoTData();
+            showStatus("No IoT data available yet.", "warning");
+            document.getElementById("prediction").textContent = "Waiting for IoT data...";
+            document.getElementById("probability").textContent = "N/A";
             return null;
           }
           return res.json();
@@ -489,8 +624,6 @@
           if (!data) return;
           updateGraph(data);
           showStatus("IoT data received successfully.", "success");
-          lastIoTUpdate = Date.now();
-          hideNoIoTData();
         })
         .catch(error => {
           showStatus("Error fetching IoT data.", "warning");
@@ -500,10 +633,9 @@
     function updateGraph(data) {
       const timestamp = new Date().toLocaleTimeString();
       const prob = data.probability;
-      resultDiv.innerHTML =
-        `<p>Prediction: <span id="prediction">${data.prediction}</span></p>
-         <p>Probability: <span id="probability">${typeof prob === 'number' ? prob.toFixed(2) : "N/A"}</span></p>`;
-      resultDiv.style.display = "block";
+
+      document.getElementById("prediction").textContent = data.prediction;
+      document.getElementById("probability").textContent = typeof prob === 'number' ? prob.toFixed(2) : "N/A";
       kpiPrediction.textContent = data.prediction;
       kpiPredStatus.textContent = "Auto/IoT";
       kpiProb.textContent = (prob*100).toFixed(1) + "%";
@@ -530,63 +662,140 @@
       statusBar.style.display = "block";
     }
 
-    function showNoIoTData() {
-      alertNoData.style.display = "block";
-      resultDiv.style.display = "none";
-      kpiPrediction.textContent = "N/A";
-      kpiPredStatus.textContent = "No Data";
-      kpiProb.textContent = "N/A";
-      kpiProbStatus.textContent = "No Data";
-      probabilityData.labels = [];
-      probabilityData.datasets.forEach(ds => ds.data = []);
-      probabilityChart.update();
-    }
-
-    function hideNoIoTData() {
-      alertNoData.style.display = "none";
-    }
-
     // --- Mode switching and filters ---
-    modeSelector.addEventListener("change", () =>
-     {
+    modeSelector.addEventListener("change", () => {
       const mode = modeSelector.value;
       clearInterval(window.autoInterval);
       if (mode === "manual") {
         document.getElementById("manual-form-container").style.display = "block";
         trendContainer.style.display = "none";
         statusBar.style.display = "none";
-      } 
-      else if (mode === "auto") 
-      {
+      } else if (mode === "auto") {
         document.getElementById("manual-form-container").style.display = "none";
         trendContainer.style.display = "block";
         fetchAuto();
-        window.autoInterval = setInterval(fetchAuto, 3000);
-      } 
-      else if (mode === "iot-graph") 
-      {
+        window.autoInterval = setInterval(fetchAuto, 5000);
+      } else if (mode === "iot-graph") {
         document.getElementById("manual-form-container").style.display = "none";
         trendContainer.style.display = "block";
         fetchRealIoT();
-        window.autoInterval = setInterval(fetchRealIoT, 500);
+        window.autoInterval = setInterval(fetchRealIoT, 5000);
       }
     });
     window.addEventListener("beforeunload", () => clearInterval(window.autoInterval));
     modeSelector.dispatchEvent(new Event("change"));
-
-    // --- Data gap detection for IoT mode ---
-    setInterval(() => 
-    {
-      if (modeSelector.value === "iot-graph" && Date.now() - lastIoTUpdate > 1 * 60 * 500) {
-        showNoIoTData();
-      }
-    }, 10000);
 
     // --- Date Range Filter (progressive disclosure placeholder) ---
     document.getElementById("date-range").addEventListener("change", function() {
       showStatus("Date filter applied: " + this.value, "success");
       // In production: filter chart data by date range
     });
+
+    // --- Chatbot: Draggable, Minimizable, Enhanced UI ---
+    // Drag logic
+    dragElement(document.getElementById("chatbot-container"), document.getElementById("chatbot-header"));
+    function dragElement(elmnt, handle) {
+      let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+      handle.onmousedown = dragMouseDown;
+      function dragMouseDown(e) {
+        e = e || window.event;
+        e.preventDefault();
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = closeDragElement;
+        document.onmousemove = elementDrag;
+      }
+      function elementDrag(e) {
+        e = e || window.event;
+        e.preventDefault();
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+        elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+        elmnt.style.bottom = "auto";
+        elmnt.style.right = "auto";
+      }
+      function closeDragElement() {
+        document.onmouseup = null;
+        document.onmousemove = null;
+      }
+    }
+
+    // Minimize/restore logic
+    document.getElementById("chatbot-minimize").onclick = function() {
+      document.getElementById("chatbot-container").classList.toggle("minimized");
+    };
+
+    // Chatbot UI logic
+    const chatbotInput = document.getElementById("chatbot-input");
+    const chatbotMessages = document.getElementById("chatbot-messages");
+    const chatbotQuickreplies = document.getElementById("chatbot-quickreplies");
+    // Quick replies for common actions
+    const quickReplies = [
+      { label: "Show latest prediction", value: "show latest prediction" },
+      { label: "Explain probability", value: "explain probability" },
+      { label: "Help", value: "help" },
+      { label: "Contact support", value: "contact support" }
+    ];
+    function showQuickReplies() {
+      chatbotQuickreplies.innerHTML = "";
+      quickReplies.forEach(qr => {
+        const btn = document.createElement("button");
+        btn.className = "chatbot-quickreply";
+        btn.textContent = qr.label;
+        btn.onclick = () => handleUserInput(qr.value);
+        chatbotQuickreplies.appendChild(btn);
+      });
+    }
+    function appendMessage(sender, message) {
+      const msg = document.createElement("div");
+      msg.className = "chatbot-bubble " + (sender === "You" ? "user" : "bot");
+      msg.textContent = message;
+      chatbotMessages.appendChild(msg);
+      chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+    }
+    function getBotResponse(userInput) {
+      const input = userInput.toLowerCase();
+      if (input.includes("help")) {
+        return "You can ask about predictions, probability, or how to use the dashboard. Try: 'Show latest prediction' or 'Explain probability'.";
+      }
+      if (input.includes("show") && input.includes("latest")) {
+        const pred = document.getElementById("prediction")?.textContent || "No prediction yet";
+        const prob = document.getElementById("probability")?.textContent || "N/A";
+        return `The latest prediction is: ${pred} (Probability: ${prob}).`;
+      }
+      if (input.includes("explain") && input.includes("probability")) {
+        return "The probability value indicates the likelihood of equipment failure. A value closer to 1 means higher risk. If probability > 0.8, immediate maintenance is recommended.";
+      }
+      if (input.includes("contact")) {
+        return "For support, please email: support@predictix.com or use the Help section.";
+      }
+      if (input.includes("mode")) {
+        const mode = document.getElementById("mode")?.value || "manual";
+        return `You are currently in '${mode}' mode. In this mode, ${mode === "manual" ? "you can submit sensor data manually." : "data is updated automatically."}`;
+      }
+      if (input.includes("bye")) {
+        return "Goodbye! If you need further assistance, just open the chat again.";
+      }
+      return "I'm here to help! Try using the quick replies below or type 'help' for guidance.";
+    }
+    function handleUserInput(userMessage) {
+      appendMessage("You", userMessage);
+      chatbotInput.value = "";
+      setTimeout(() => {
+        const botReply = getBotResponse(userMessage);
+        appendMessage("Bot", botReply);
+        showQuickReplies();
+      }, 400);
+    }
+    chatbotInput.addEventListener("keypress", function (e) {
+      if (e.key === "Enter" && chatbotInput.value.trim() !== "") {
+        handleUserInput(chatbotInput.value.trim());
+      }
+    });
+    showQuickReplies();
   </script>
 </body>
 </html>
