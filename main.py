@@ -138,6 +138,16 @@ def get_temperature():
     else:
         return None
 
+import random
+
+def Current_random():
+    r = random.random()
+    if r < 0.90:
+        return round(random.uniform(0.2, 0.3), 2)
+    elif r < 0.95:
+        return round(random.uniform(0.3, 0.35), 2)
+    else:
+        return round(random.uniform(0.35, 0.4), 2)
 
 
 # Manual prediction (no effect on IoT state)
@@ -197,6 +207,11 @@ async def get_prediction():
         power = round(voltage * current, 2)
         vibration = round(random.uniform(0.0, 1.0), 2)
         humidity = round(random.uniform(35.0, 40.0), 2)
+
+
+        ########## Current ########
+        current = Current_random()
+
 
         ########## humidity ########
         # Try getting live humidity
