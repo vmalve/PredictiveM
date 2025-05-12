@@ -335,7 +335,7 @@
       <h2>.</h2>
       <div id="result" aria-live="polite"></div>
       <div id="status-bar" role="status"></div>
-      <div class="alert" id="alert-no-data">No IoT data received in the last 2 minutes.</div>
+      <div class="alert" id="alert-no-data">No IoT data received in the last 1 minute.</div>
       <div id="trend-container">
         <h2>Probability Trend (IoT Mode)</h2>
         <canvas id="probabilityChart" width="700" height="300" aria-label="Probability Trend Chart"></canvas>
@@ -547,31 +547,37 @@
     }
 
     // --- Mode switching and filters ---
-    modeSelector.addEventListener("change", () => {
+    modeSelector.addEventListener("change", () =>
+     {
       const mode = modeSelector.value;
       clearInterval(window.autoInterval);
       if (mode === "manual") {
         document.getElementById("manual-form-container").style.display = "block";
         trendContainer.style.display = "none";
         statusBar.style.display = "none";
-      } else if (mode === "auto") {
+      } 
+      else if (mode === "auto") 
+      {
         document.getElementById("manual-form-container").style.display = "none";
         trendContainer.style.display = "block";
         fetchAuto();
         window.autoInterval = setInterval(fetchAuto, 5000);
-      } else if (mode === "iot-graph") {
+      } 
+      else if (mode === "iot-graph") 
+      {
         document.getElementById("manual-form-container").style.display = "none";
         trendContainer.style.display = "block";
         fetchRealIoT();
-        window.autoInterval = setInterval(fetchRealIoT, 5000);
+        window.autoInterval = setInterval(fetchRealIoT, 500);
       }
     });
     window.addEventListener("beforeunload", () => clearInterval(window.autoInterval));
     modeSelector.dispatchEvent(new Event("change"));
 
     // --- Data gap detection for IoT mode ---
-    setInterval(() => {
-      if (modeSelector.value === "iot-graph" && Date.now() - lastIoTUpdate > 2 * 60 * 1000) {
+    setInterval(() => 
+    {
+      if (modeSelector.value === "iot-graph" && Date.now() - lastIoTUpdate > 1 * 60 * 500) {
         showNoIoTData();
       }
     }, 10000);

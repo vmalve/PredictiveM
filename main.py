@@ -47,8 +47,6 @@ app.add_middleware(
 )
 
 # Constants
-IOT_DATA_EXPIRY_SECONDS = 5  # 100 ms: Only combine readings within 100 ms
-
 MODEL_PATH = os.path.join(os.getcwd(), 'random_forest_model.pkl')
 
 # Load ML model
@@ -183,11 +181,15 @@ async def get_prediction():
 async def predict_iotLive():
     try:
         logging.info("🔄 Received request to /predict/iotLive")
+
+        # Ensure latest_prediction_result is available
         if latest_prediction_result is None:
             logging.warning("⚠️ No prediction result available. Returning 204.")
             return Response(status_code=204)
+
         logging.info(f"✅ Returning prediction result: {latest_prediction_result}")
-        return latest_prediction_result
+        return latest_prediction_result  # ✅ return flat structure
+
     except Exception as e:
         logging.error("❌ Error in /predict/iotLive:", exc_info=True)
         return {
@@ -197,12 +199,11 @@ async def predict_iotLive():
         }
 
 
-
 @app.post("/predict_iot")
 def predict_iot(data: SensorData):
     global latest_iot_data, latest_iot_time, latest_prediction_result
     
-    with iot_buffer_lock:  # Thread-safe access to shared resources
+    with iot_buffer_lock:  # Thread-safe access
         try:
             now = datetime.now()
             
@@ -210,16 +211,26 @@ def predict_iot(data: SensorData):
             if latest_iot_time and (now - latest_iot_time).total_seconds() > IOT_DATA_EXPIRY_SECONDS:
                 latest_iot_data.clear()
                 logging.info("🧹 Cleared stale buffer due to expiry")
-            
-            # Merge new data atomically
-            incoming_data = {k: v for k, v in data.dict().items() if v is not None}
+
+            # Merge new data
+            incoming_data = {k: v for k, v in data.dict(exclude_unset=True).items()}
             latest_iot_data.update(incoming_data)
             latest_iot_time = now
-            
-            logging.debug(f"📥 Merged data: {latest_iot_data}")
-            
-            # Check for missing fields
+
+            # Log received and buffered fields
+            logging.info(f"📥 Received fields this request: {list(incoming_data.keys())}")
+            logging.info(f"📦 Current buffer state: {list(latest_iot_data.keys())}")
+
+
+            # Calculate power if we have current and voltage
+            if 'current' in latest_iot_data and 'voltage' in latest_iot_data:
+                latest_iot_data['power'] = latest_iot_data['current'] * latest_iot_data['voltage']
+                logging.info(f"⚡ Calculated power: {latest_iot_data['power']}W")
+
+            # Check required fields (excluding power since we calculate it)
+            required_fields = {"voltage", "current", "temperature", "vibration", "humidity"}
             missing = required_fields - latest_iot_data.keys()
+            
             if missing:
                 logging.info(f"⏳ Awaiting fields: {', '.join(missing)}")
                 return {
@@ -227,34 +238,34 @@ def predict_iot(data: SensorData):
                     "received": list(latest_iot_data.keys()),
                     "missing": list(missing)
                 }
-            
-            # Convert and validate data
+
+            # Prepare data for prediction
             input_df = pd.DataFrame([latest_iot_data]).rename(columns={
                 "voltage": "Voltage",
                 "current": "Current",
                 "temperature": "Temperature",
-                "power": "Power",
+                "power": "Power",  # This is now calculated
                 "vibration": "Vibration",
                 "humidity": "Humidity"
             })[expected_fields]
-            
+
             # Make prediction
             probability = model.predict_proba(input_df)[0][1]
             prediction = int(probability > 0.5)
-            
-            # Update global prediction state
+
+            # Update global state
             latest_prediction_result = {
                 "prediction": prediction,
-                "probability": probability,
+                "probability": float(probability),
                 "timestamp": now.isoformat()
             }
-            
+
             # Clear buffer for new data cycle
             latest_iot_data.clear()
             logging.info("✅ Prediction successful - buffer reset")
             
             return latest_prediction_result
-            
+
         except Exception as e:
             logging.error("❌ Prediction failed:", exc_info=True)
             latest_iot_data.clear()
