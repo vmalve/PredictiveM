@@ -365,11 +365,6 @@ def predict_iot(data: SensorData):
                     "missing": list(missing)
                 }
 
-            #logging.info(f"📥 Received fields for prediction: {latest_iot_data}")
-            # Print values of all required fields
-            field_values = ', '.join(f"{field}={latest_iot_data[field]}" for field in required_fields)
-            logging.info(f"📥 Received fields for prediction: {field_values}")
-
             # Prepare data for prediction
             input_df = pd.DataFrame([latest_iot_data]).rename(columns={
                 "voltage": "Voltage",
@@ -379,6 +374,10 @@ def predict_iot(data: SensorData):
                 "vibration": "Vibration",
                 "humidity": "Humidity"
             })[expected_fields]
+
+            # Log input_df fields and values
+            field_values = ', '.join(f"{col}={input_df.iloc[0][col]}" for col in input_df.columns)
+            logging.info(f"📥 Final input DataFrame for prediction: {field_values}")
 
             # Make prediction
             probability = model.predict_proba(input_df)[0][1]
