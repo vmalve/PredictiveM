@@ -81,6 +81,65 @@ class SensorData(BaseModel):
 async def serve_index():
     return FileResponse(os.path.join(os.path.dirname(__file__), "index.html"))
 
+# Cache variables
+cached_data = None
+cache_timestamp = 0
+CACHE_DURATION = 1800  # 30 minutes
+
+import requests
+import time
+
+# Initialize cache variables
+cached_data = None
+cache_timestamp = 0
+CACHE_DURATION = 600  # seconds
+
+def fetch_weather(lat, lon, api_key):
+    global cached_data, cache_timestamp
+
+    if cached_data and (time.time() - cache_timestamp) < CACHE_DURATION:
+        print("Using cached weather data.")
+        return cached_data
+
+    print("Fetching new weather data from API...")
+    url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric"
+    response = requests.get(url)
+    data = response.json()
+
+    if response.status_code == 200:
+        cached_data = data
+        cache_timestamp = time.time()
+        return data
+    else:
+        print("Error fetching weather:", data)
+        return None
+
+# ✅ Wrapper to return only humidity
+def get_humidity():
+    latitude = 18.5204  # Pune
+    longitude = 73.8567
+    api_key = "5489d93d76a18988ed2197d6795a1323"  # Use your actual key
+
+    weather = fetch_weather(latitude, longitude, api_key)
+    if weather and "main" in weather:
+        return weather['main']['humidity']
+    else:
+        return None
+
+# ✅ Wrapper to return only temperature
+def get_temperature():
+    latitude = 18.5204  # Pune
+    longitude = 73.8567
+    api_key = "5489d93d76a18988ed2197d6795a1323"  # Use your actual key
+
+    weather = fetch_weather(latitude, longitude, api_key)
+    if weather and "main" in weather:
+        return weather['main']['temp']
+    else:
+        return None
+
+
+
 # Manual prediction (no effect on IoT state)
 @app.post("/predict/manual")
 async def predict(data: SensorData):
@@ -138,6 +197,33 @@ async def get_prediction():
         power = round(voltage * current, 2)
         vibration = round(random.uniform(0.0, 1.0), 2)
         humidity = round(random.uniform(35.0, 40.0), 2)
+
+        ########## humidity ########
+        # Try getting live humidity
+        live_humidity = get_humidity()
+        if live_humidity is not None:
+            humidity = live_humidity  # Use API value only if available
+
+        # Simulated fallback temperature
+        temperature = round(random.uniform(30.0, 45.0), 2)
+        # Try getting live temperature
+        live_temp = get_temperature()
+        if live_temp is not None:
+            temperature = live_temp
+
+       
+        ###########Vibration############
+        # Normalize current to [0, 1]
+        normalized_current = current / 0.4  # 0.4 is the max expected current
+
+        # Add optional noise to simulate variation
+        noise = random.uniform(-0.05, 0.05)
+
+        # Calculate vibration
+        vibration = round(normalized_current + noise, 2)
+
+        # Clamp vibration to [0.0, 1.0]
+        vibration = max(0.0, min(vibration, 1.0))
 
         print(f"🔄 Auto-refresh simulated input: voltage={voltage}, current={current}, temperature={temperature}, power={power}, vibration={vibration}")
 
