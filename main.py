@@ -296,14 +296,14 @@ async def get_prediction():
 @app.get("/predict/iotLive")
 async def predict_iotLive():
     try:
-        logging.info("🔄 Received request to /predict/iotLive")
+        # logging.info("🔄 Received request to /predict/iotLive")
 
         # Ensure latest_prediction_result is available
         if latest_prediction_result is None:
             logging.warning("⚠️ No prediction result available. Returning 204.")
             return Response(status_code=204)
 
-        logging.info(f"✅ Returning prediction result: {latest_prediction_result}")
+        #logging.info(f"✅ Returning prediction result: {latest_prediction_result}")
         return latest_prediction_result  # ✅ return flat structure
 
     except Exception as e:
@@ -365,8 +365,10 @@ def predict_iot(data: SensorData):
                     "missing": list(missing)
                 }
 
-
-            logging.info(f"📥 Received fields for prediction: {latest_iot_data}")
+            #logging.info(f"📥 Received fields for prediction: {latest_iot_data}")
+            # Print values of all required fields
+            field_values = ', '.join(f"{field}={latest_iot_data[field]}" for field in required_fields)
+            logging.info(f"📥 Received fields for prediction: {field_values}")
 
             # Prepare data for prediction
             input_df = pd.DataFrame([latest_iot_data]).rename(columns={
